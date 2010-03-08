@@ -1,0 +1,16 @@
+/** Copyright 2009 Twitter, Inc.*/
+package com.twitter.service.snowflake
+
+import com.twitter.ostrich.Stats
+import com.twitter.service.snowflake.gen._
+import net.lag.logging.Logger
+
+/**
+ * Implementation of StatusService Thrift interface delegating to the
+ * StatusStore subclass.
+ */
+class Snowflake extends Snowflake.Iface {
+  val log = Logger.get
+  val worker = new IdWorker(1)
+  def get_id(): Long = worker.nextId
+}

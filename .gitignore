@@ -1,0 +1,13 @@
+target
+dist
+#*#
+.#*
+*.log
+*.iml
+*.ipr
+*.iws
+*.swp
+lib_managed
+project/boot
+.DS_Store
+src_managed
