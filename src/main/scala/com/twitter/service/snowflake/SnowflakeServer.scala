@@ -27,8 +27,8 @@ object SnowflakeServer {
   private val log = Logger.get
   val runtime = new RuntimeEnvironment(getClass)
   var server: TServer = null
-  val workerId = Configgy.config.getInt("worker_id").get
-
+  var serverId:Int = 0
+  val workers = new scala.collection.mutable.ListBuffer[Snowflake]()
   //TODO: what array should be passed in here?
   //val w3c = new W3CStats(Logger.get("w3c"), Array("ids_generated"))
 
@@ -43,20 +43,23 @@ object SnowflakeServer {
   def main(args: Array[String]) {
     runtime.load(args)
 
+    serverId = Configgy.config.getInt("server_id").get
     val admin = new AdminService(Configgy.config, runtime)
 
     try {
       // paranoia to make sure we don't restart too quickly
       // and cause ID collisions
-      Thread.sleep(100)
+      Thread.sleep(1000)
     }
 
     try {
+      val worker = new Snowflake(serverId)
+      workers += worker
       val PORT = Configgy.config.getInt("snowflake.server_port", 7911)
       log.info("snowflake.server_port loaded: %s", PORT)
 
       val transport = new TNonblockingServerSocket(PORT)
-      val processor = new Snowflake.Processor(new Snowflake(workerId))
+      val processor = new Snowflake.Processor(worker)
       val protoFactory = new TBinaryProtocol.Factory(true, true)
 
       val serverOpts = new THsHaServer.Options
