@@ -27,6 +27,7 @@ object SnowflakeServer {
   private val log = Logger.get
   val runtime = new RuntimeEnvironment(getClass)
   var server: TServer = null
+  val workerId = Configgy.config.getInt("worker_id").get
 
   //TODO: what array should be passed in here?
   //val w3c = new W3CStats(Logger.get("w3c"), Array("ids_generated"))
@@ -55,7 +56,7 @@ object SnowflakeServer {
       log.info("snowflake.server_port loaded: %s", PORT)
 
       val transport = new TNonblockingServerSocket(PORT)
-      val processor = new Snowflake.Processor(new Snowflake)
+      val processor = new Snowflake.Processor(new Snowflake(workerId))
       val protoFactory = new TBinaryProtocol.Factory(true, true)
 
       val serverOpts = new THsHaServer.Options

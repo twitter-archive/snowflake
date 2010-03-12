@@ -3,17 +3,51 @@ package com.twitter.service.snowflake
 import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import org.specs._
 
-object SnowflakeSpec extends Specification {
+object IdWorkerSpec extends Specification {
   Configgy.configure("config/test.conf")
+  val workerMask = 0x00000000FF000000L
+  val timestampMask = 0xFFFFFFFF00000000L
 
-  "Snowflake" should {
+  "IdWorker" should {
     "properly mask server id" in {
       val workerId = 0xFF
       val worker = new IdWorker(workerId)
-      val workerMask = 0x00000000FF000000L
       for (i <- 1 to 1000) {
         val id = worker.nextId
         ((id & workerMask) >> 24) must be_==(workerId)
+      }
+    }
+
+    "properly mask timestamp" in {
+      val worker = new IdWorker(255)
+      for (i <- 1 to 100) {
+        val t = System.currentTimeMillis
+        val id = worker.nextId(t)
+        ((id & timestampMask) >> 32)  must be_==(t >> 10)
+      }
+    }
+
+    "roll over sequence id" in {
+      // put a zero in the low bit so we can detect overflow from the sequence
+      val workerId = 4
+      val worker = new IdWorker(workerId)
+      val startSequence = 0xFFFFFF-20
+      val endSequence = 0xFFFFFF+20
+      worker.sequence = startSequence
+
+      for (i <- startSequence to endSequence) {
+        val id = worker.nextId
+        ((id & workerMask) >> 24) must be_==(workerId)
+      }
+    }
+
+    "generate increasing ids" in {
+      val worker = new IdWorker(1)
+      var lastId = 0L
+      for (i <- 1 to 100) {
+        val id = worker.nextId
+        id must be_>(lastId)
+        lastId = id
       }
     }
 

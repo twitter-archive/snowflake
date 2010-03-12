@@ -20,7 +20,7 @@ class IdWorker(workerId: Long) {
   var sequence = 0L
   // used to truncate timestamp into appropriate number of bits
   // defaulting to 9 gives us roughly 1-second resolution
-  val timestampRightShift = Configgy.config.getInt("generator.timestamp_shift", 9)
+  val timestampRightShift = Configgy.config.getInt("generator.timestamp_shift", 10)
   // the number of bits used to record the timestamp
   val timestampBits = Configgy.config.getInt("generator.timestamp_bits", 32)
   // the number of bits used to record the worker Id
@@ -42,14 +42,19 @@ class IdWorker(workerId: Long) {
     timestampRightShift, timestampLeftShift, workerIdBits, sequenceBits)
 
 
-  def nextId = {
+  def nextId(): Long = {
+    nextId(System.currentTimeMillis)
+  }
+
+  def nextId(timestamp: Long): Long = {
     synchronized {
       // let this wrap indefinitely.  
       // At 24 sequence bits this gives us 16 million ids per timestamp increment
       sequence += 1
       genCounter.incr()
-      ((System.currentTimeMillis >> timestampRightShift) << timestampLeftShift) |
+      ((timestamp >> timestampRightShift) << timestampLeftShift) |
         (workerId << workerIdShift) | (sequence & sequenceMask)
     }
   }
+
 }
