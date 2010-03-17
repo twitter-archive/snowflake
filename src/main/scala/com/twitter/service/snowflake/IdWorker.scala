@@ -21,12 +21,12 @@ class IdWorker(workerId: Long) {
   // defaulting to 9 gives us roughly 1-second resolution
   val timestampRightShift = 10
   // the number of bits used to record the timestamp
-  val timestampBits = 32
+  val timestampBits = 42
   // the number of bits used to record the worker Id
-  val workerIdBits = 8
+  val workerIdBits = 10
   val maxWorkerId = -1L ^ (-1L << workerIdBits)
   // the number of bits used to record the sequence
-  val sequenceBits = 24
+  val sequenceBits = 12
 
   val timestampLeftShift = sequenceBits + workerIdBits
   val workerIdShift = sequenceBits

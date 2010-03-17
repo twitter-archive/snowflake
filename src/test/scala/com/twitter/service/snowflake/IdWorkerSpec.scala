@@ -5,8 +5,8 @@ import org.specs._
 
 class IdWorkerSpec extends Specification {
   Configgy.configure("config/test.conf")
-  val workerMask = 0x00000000FF000000L
-  val timestampMask = 0xFFFFFFFF00000000L
+  val workerMask =    0x00000000003FF000L
+  val timestampMask = 0xFFFFFFFFFFC00000L
 
   "IdWorker" should {
     "properly mask server id" in {
@@ -14,7 +14,7 @@ class IdWorkerSpec extends Specification {
       val worker = new IdWorker(workerId)
       for (i <- 1 to 1000) {
         val id = worker.nextId
-        ((id & workerMask) >> 24) must be_==(workerId)
+        ((id & workerMask) >> 12) must be_==(workerId)
       }
     }
 
@@ -23,7 +23,7 @@ class IdWorkerSpec extends Specification {
       for (i <- 1 to 100) {
         val t = System.currentTimeMillis
         val id = worker.nextId(t)
-        ((id & timestampMask) >> 32)  must be_==(t >> 10)
+        ((id & timestampMask) >> 22)  must be_==(t >> 10)
       }
     }
 
@@ -37,7 +37,7 @@ class IdWorkerSpec extends Specification {
 
       for (i <- startSequence to endSequence) {
         val id = worker.nextId
-        ((id & workerMask) >> 24) must be_==(workerId)
+        ((id & workerMask) >> 12) must be_==(workerId)
       }
     }
 
