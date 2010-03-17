@@ -3,7 +3,6 @@ package com.twitter.service.snowflake
 
 import com.twitter.ostrich.Stats
 import com.twitter.service.snowflake.gen._
-import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
 import scala.actors.Actor
 import scala.actors.Actor._
@@ -20,14 +19,14 @@ class IdWorker(workerId: Long) {
   var sequence = 0L
   // used to truncate timestamp into appropriate number of bits
   // defaulting to 9 gives us roughly 1-second resolution
-  val timestampRightShift = Configgy.config.getInt("generator.timestamp_shift", 10)
+  val timestampRightShift = 10
   // the number of bits used to record the timestamp
-  val timestampBits = Configgy.config.getInt("generator.timestamp_bits", 32)
+  val timestampBits = 32
   // the number of bits used to record the worker Id
-  val workerIdBits = Configgy.config.getInt("generator.worker_id_bits", 8)
+  val workerIdBits = 8
   val maxWorkerId = -1L ^ (-1L << workerIdBits)
   // the number of bits used to record the sequence
-  val sequenceBits = Configgy.config.getInt("generator.sequence_bits", 24)
+  val sequenceBits = 24
 
   val timestampLeftShift = sequenceBits + workerIdBits
   val workerIdShift = sequenceBits
