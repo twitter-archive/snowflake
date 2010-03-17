@@ -3,7 +3,7 @@ package com.twitter.service.snowflake
 import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import org.specs._
 
-object IdWorkerSpec extends Specification {
+class IdWorkerSpec extends Specification {
   Configgy.configure("config/test.conf")
   val workerMask = 0x00000000FF000000L
   val timestampMask = 0xFFFFFFFF00000000L

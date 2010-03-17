@@ -3,7 +3,7 @@ package com.twitter.service.snowflake
 import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import org.specs._
 
-object SnowflakeSpec extends Specification {
+class SnowflakeSpec extends Specification {
   Configgy.configure("config/test.conf")
 
   "Snowflake" should {

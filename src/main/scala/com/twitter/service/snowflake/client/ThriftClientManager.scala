@@ -2,9 +2,9 @@
 package com.twitter.service.snowflake.client
 
 import com.twitter.service.snowflake.gen.Snowflake.Client
-import com.facebook.thrift.TException
-import com.facebook.thrift.protocol.{TBinaryProtocol, TProtocol}
-import com.facebook.thrift.transport.{TFramedTransport, TSocket, TTransport, TTransportException}
+import org.apache.thrift.TException
+import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
+import org.apache.thrift.transport.{TFramedTransport, TSocket, TTransport, TTransportException}
 import net.lag.configgy.Configgy
 import net.lag.logging.Logger
 

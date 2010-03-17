@@ -7,7 +7,7 @@ import net.lag.configgy.{Config, Configgy}
 import net.lag.logging.Logger
 import org.apache.commons.pool.impl.{GenericObjectPool, StackKeyedObjectPoolFactory}
 import org.apache.commons.pool.BasePoolableObjectFactory
-import com.facebook.thrift.transport.TTransport
+import org.apache.thrift.transport.TTransport
 import java.util.concurrent.ConcurrentHashMap
 
 
