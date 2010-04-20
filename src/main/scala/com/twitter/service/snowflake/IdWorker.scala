@@ -35,8 +35,8 @@ class IdWorker(workerId: Long) {
     throw new IllegalArgumentException("worker Id can't be greater than %d".format(maxWorkerId))
   }
 
-  log.info("worker starting.  timestamp right shift %d, timestamp left shift %d, worker id bits %d, sequence bits %d",
-    timestampRightShift, timestampLeftShift, workerIdBits, sequenceBits)
+  log.info("worker starting. timestamp left shift %d, worker id bits %d, sequence bits %d",
+    timestampLeftShift, workerIdBits, sequenceBits)
 
 
   def nextId(): Long = {
