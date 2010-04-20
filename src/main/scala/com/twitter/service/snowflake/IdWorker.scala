@@ -32,7 +32,6 @@ class IdWorker(workerId: Long) {
   val workerIdShift = sequenceBits
   val sequenceMask = -1L ^ (-1L << sequenceBits)
 
-  var sleeper = (() => Thread.sleep(100))
   var millisecondGen = {() => System.currentTimeMillis()}
   var lastTimestamp = -1L
 
@@ -51,12 +50,9 @@ class IdWorker(workerId: Long) {
 
   def nextId(timestamp: Long): Long = {
     synchronized {
-      // let this wrap indefinitely.  
-      // At 24 sequence bits this gives us 16 million ids per timestamp increment
-      sequence += 1
-      val masked = sequence & sequenceMask
+      sequence = (sequence + 1) & sequenceMask
 
-      if (masked == 0) {
+      if (sequence == 0) {
         if (lastTimestamp == timestamp) {
           sleeper()
         }
@@ -65,8 +61,11 @@ class IdWorker(workerId: Long) {
       }
       genCounter.incr()
       ((timestamp >> timestampRightShift) << timestampLeftShift) |
-        (workerId << workerIdShift) | masked
+        (workerId << workerIdShift) | sequence
     }
   }
 
+  def sleeper() = {
+    Thread.sleep(1)
+  }
 }

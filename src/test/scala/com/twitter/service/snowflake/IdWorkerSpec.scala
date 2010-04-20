@@ -8,6 +8,12 @@ class IdWorkerSpec extends Specification {
   val workerMask =    0x00000000003FF000L
   val timestampMask = 0xFFFFFFFFFFC00000L
 
+  class WakingIdWorker(workerId: Long) extends IdWorker(workerId) {
+    var slept = 0
+    override def sleeper() = {
+      slept += 1
+    }
+   }
   "IdWorker" should {
     "properly mask server id" in {
       val workerId = 0xFF
@@ -65,18 +71,12 @@ class IdWorkerSpec extends Specification {
 
     "sleep if we would rollover twice in the same millisecond" in {
       var queue = new scala.collection.mutable.Queue[Long]()
-      for (i <- 0 to 5000) {
-        queue.enqueue(2L)
-      }
-      var slept = 0
-      val worker = new IdWorker(1)
-      worker.sleeper = (() => slept += 1)
+      val worker = new WakingIdWorker(1)
       worker.sequence = 4095
-      worker.millisecondGen = (() => queue.dequeue)
       for(i <- 0 to 5000) {
-        worker.nextId
+        worker.nextId(2L)
       }
-      slept must be(1)
+      worker.slept must be(1)
     }
   }
 }
