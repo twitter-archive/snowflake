@@ -1,4 +1,4 @@
-/** Copyright 2009 Twitter, Inc.*/
+/** Copyright 2010 Twitter, Inc.*/
 package com.twitter.service.snowflake
 
 import com.twitter.ostrich.Stats
