@@ -28,7 +28,7 @@ class IdWorkerSpec extends Specification {
       val worker = new IdWorker(255)
       for (i <- 1 to 100) {
         val t = System.currentTimeMillis
-        val id = worker.nextId(t)
+        val id = worker.nextId((() => t))
         ((id & timestampMask) >> 22)  must be_==(t >> 10)
       }
     }
@@ -72,10 +72,12 @@ class IdWorkerSpec extends Specification {
     "sleep if we would rollover twice in the same millisecond" in {
       var queue = new scala.collection.mutable.Queue[Long]()
       val worker = new WakingIdWorker(1)
+      val iter = List(2L, 2L, 3L).elements
+      val msGen = (() => iter.next)
       worker.sequence = 4095
-      for(i <- 0 to 5000) {
-        worker.nextId(2L)
-      }
+      worker.nextId(msGen)
+      worker.sequence = 4095
+      worker.nextId(msGen)
       worker.slept must be(1)
     }
   }

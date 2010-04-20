@@ -32,7 +32,6 @@ class IdWorker(workerId: Long) {
   val workerIdShift = sequenceBits
   val sequenceMask = -1L ^ (-1L << sequenceBits)
 
-  var millisecondGen = {() => System.currentTimeMillis()}
   var lastTimestamp = -1L
 
   // sanity check for workerId
@@ -45,16 +44,17 @@ class IdWorker(workerId: Long) {
 
 
   def nextId(): Long = {
-    nextId(millisecondGen())
+    nextId((() => System.currentTimeMillis))
   }
 
-  def nextId(timestamp: Long): Long = {
+  def nextId(timeGen: (() => Long)): Long = {
     synchronized {
       sequence = (sequence + 1) & sequenceMask
-
+      var timestamp = timeGen()
       if (sequence == 0) {
-        if (lastTimestamp == timestamp) {
+        while (lastTimestamp == timestamp) {
           sleeper()
+          timestamp = timeGen()
         }
         lastTimestamp = timestamp
         sequence = 0
