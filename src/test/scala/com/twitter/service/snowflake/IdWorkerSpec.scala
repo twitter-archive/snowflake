@@ -62,5 +62,21 @@ class IdWorkerSpec extends Specification {
       println("generated 1000000 ids in %d ms, or %,.0f ids/second".format(t2 - t, 1000000000.0/(t2-t)))
       1 must be_>(0)
     }
+
+    "sleep if we would rollover twice in the same millisecond" in {
+      var queue = new scala.collection.mutable.Queue[Long]()
+      for (i <- 0 to 5000) {
+        queue.enqueue(2L)
+      }
+      var slept = 0
+      val worker = new IdWorker(1)
+      worker.sleeper = (() => slept += 1)
+      worker.sequence = 4095
+      worker.millisecondGen = (() => queue.dequeue)
+      for(i <- 0 to 5000) {
+        worker.nextId
+      }
+      slept must be(1)
+    }
   }
 }
