@@ -1,4 +1,4 @@
-/** Copyright 2009 Twitter, Inc.*/
+/** Copyright 2010 Twitter, Inc.*/
 package com.twitter.service.snowflake
 
 import com.twitter.ostrich.Stats
@@ -17,9 +17,7 @@ class IdWorker(workerId: Long) {
   private val log = Logger.get
   var genCounter = Stats.getCounter("ids_generated")
   var sequence = 0L
-  // used to truncate timestamp into appropriate number of bits
-  // defaulting to 9 gives us roughly 1-second resolution
-  val timestampRightShift = 10
+  val twepoch = 1142974214000L
   // the number of bits used to record the timestamp
   val timestampBits = 42
   // the number of bits used to record the worker Id
@@ -60,7 +58,7 @@ class IdWorker(workerId: Long) {
         sequence = 0
       }
       genCounter.incr()
-      ((timestamp >> timestampRightShift) << timestampLeftShift) |
+      ((timestamp - twepoch) << timestampLeftShift) |
         (workerId << workerIdShift) | sequence
     }
   }

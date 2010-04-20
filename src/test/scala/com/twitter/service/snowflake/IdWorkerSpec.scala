@@ -28,8 +28,8 @@ class IdWorkerSpec extends Specification {
       val worker = new IdWorker(255)
       for (i <- 1 to 100) {
         val t = System.currentTimeMillis
-        val id = worker.nextId((() => t))
-        ((id & timestampMask) >> 22)  must be_==(t >> 10)
+        val id = worker.nextId(() => t)
+        ((id & timestampMask) >> 22)  must be_==(t - worker.twepoch)
       }
     }
 
