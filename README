@@ -21,11 +21,11 @@ Current logic for id generation:
                 /      \                          |
        YES     /        \  NO                     |
   +-------------+    +------------+               |
-  |             |    |            |               |
-  |   Sleep     |    |    Done.   |               |
-  |    for      |    |            |               |
-  |    1ms      |    |            |               |
-  |             |    |            |               |
+  |   Sleep     |    |            |               |
+  |  for 1ms    |    |    Done.   |               |
+  |    and      |    |            |               |
+  |   reset     |    |            |               |
+  |   currTS    |    |            |               |
   +-------------+    +------------+               |
                \             \             +------------+
                  \             \           |            |
