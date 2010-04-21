@@ -16,6 +16,10 @@ import scala.actors.Actor._
 class IdWorker(workerId: Long) {
   private val log = Logger.get
   var genCounter = Stats.getCounter("ids_generated")
+
+  // Tue, 21 Mar 2006 20:50:14.000 GMT
+  val twepoch = 1142974214000L
+
   var sequence = 0L
   // the number of bits used to record the worker Id
   val workerIdBits = 10
@@ -59,7 +63,7 @@ class IdWorker(workerId: Long) {
 
     lastTimestamp = timestamp
     genCounter.incr()
-    (timestamp << timestampLeftShift) |
+    ((timestamp - twepoch) << timestampLeftShift) |
     (workerId << workerIdShift) | sequence
   }
 
