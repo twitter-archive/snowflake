@@ -84,7 +84,7 @@ class IdWorkerSpec extends Specification {
     "generate only unique ids" in {
       val worker = new IdWorker(255)
       var set = new scala.collection.mutable.HashSet[Long]()
-      val ids = (1 to 40000).map(i => worker.nextId).force
+      val ids = (1 to 2000000).map(i => worker.nextId).force
       ids.foreach{id =>
         if (set.contains(id)) {
           println(java.lang.Long.toString(id, 2))
