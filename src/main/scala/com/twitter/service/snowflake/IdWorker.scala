@@ -17,9 +17,6 @@ class IdWorker(workerId: Long) {
   private val log = Logger.get
   var genCounter = Stats.getCounter("ids_generated")
   var sequence = 0L
-  val twepoch = 1142974214000L
-  // the number of bits used to record the timestamp
-  val timestampBits = 42
   // the number of bits used to record the worker Id
   val workerIdBits = 10
   val maxWorkerId = -1L ^ (-1L << workerIdBits)
@@ -28,7 +25,7 @@ class IdWorker(workerId: Long) {
 
   val timestampLeftShift = sequenceBits + workerIdBits
   val workerIdShift = sequenceBits
-  val sequenceMask = -1L ^ (-1L << sequenceBits)
+  val sequenceMask = 4095 // -1L ^ (-1L << sequenceBits)
 
   var lastTimestamp = -1L
 
@@ -45,22 +42,25 @@ class IdWorker(workerId: Long) {
     nextId((() => System.currentTimeMillis))
   }
 
-  def nextId(timeGen: (() => Long)): Long = {
-    synchronized {
+  def nextId(timeGen: (() => Long)): Long = synchronized {
+    var timestamp = timeGen()
+
+    if (lastTimestamp == timestamp) {
       sequence = (sequence + 1) & sequenceMask
-      var timestamp = timeGen()
       if (sequence == 0) {
         while (lastTimestamp == timestamp) {
           sleeper()
           timestamp = timeGen()
         }
-        lastTimestamp = timestamp
-        sequence = 0
       }
-      genCounter.incr()
-      ((timestamp - twepoch) << timestampLeftShift) |
-        (workerId << workerIdShift) | sequence
+    } else {
+      sequence = 0
     }
+
+    lastTimestamp = timestamp
+    genCounter.incr()
+    (timestamp << timestampLeftShift) |
+    (workerId << workerIdShift) | sequence
   }
 
   def sleeper() = {

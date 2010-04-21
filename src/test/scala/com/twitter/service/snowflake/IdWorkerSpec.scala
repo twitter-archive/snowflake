@@ -29,7 +29,7 @@ class IdWorkerSpec extends Specification {
       for (i <- 1 to 100) {
         val t = System.currentTimeMillis
         val id = worker.nextId(() => t)
-        ((id & timestampMask) >> 22)  must be_==(t - worker.twepoch)
+        ((id & timestampMask) >> 22)  must be_==(t)
       }
     }
 
@@ -79,6 +79,20 @@ class IdWorkerSpec extends Specification {
       worker.sequence = 4095
       worker.nextId(msGen)
       worker.slept must be(1)
+    }
+
+    "generate only unique ids" in {
+      val worker = new IdWorker(255)
+      var set = new scala.collection.mutable.HashSet[Long]()
+      val ids = (1 to 40000).map(i => worker.nextId).force
+      ids.foreach{id =>
+        if (set.contains(id)) {
+          println(java.lang.Long.toString(id, 2))
+        } else {
+          set += id
+        }
+      }
+      set.size must be_==(ids.size)
     }
   }
 }
