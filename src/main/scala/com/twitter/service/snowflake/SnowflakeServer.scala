@@ -52,8 +52,7 @@ object SnowflakeServer {
     loadServerId()
     val admin = new AdminService(Configgy.config, runtime)
 
-    // paranoia to make sure we don't restart too quickly
-    // and cause ID collisions
+    // TODO we should sleep for at least as long as our time-drift SLA
     Thread.sleep(1000)
 
     try {
@@ -100,16 +99,15 @@ object SnowflakeServer {
         }
 
         try {
+          // TODO fill gaps in id numbers
           val children = zkClient.getChildren(zk_path).map((s:String) => s.toInt).toArray
           log.debug("found %s children".format(children.length))
           Sorting.quickSort(children)
-          val id = if (children.length > 0) {
-            children.last + 1
-          } else {
-            0
-          }
+          val id = findFirstAvailableId(children)
 
+          log.debug("trying to claim workerId %d".format(id))
           zkClient.create("%s/%s".format(zk_path, id), getHostname.getBytes(), Ids.OPEN_ACL_UNSAFE, EPHEMERAL)
+          log.debug("successfully claimed workerId %d".format(id))
           serverId = id;
         } catch {
           case e: KeeperException => {
@@ -122,5 +120,18 @@ object SnowflakeServer {
 
   def getHostname(): String = {
     return java.net.InetAddress.getLocalHost().getHostName();
+  }
+  
+  def findFirstAvailableId(children:Array[Int]): Int = {
+    if (children.length > 0) {
+      for (i <- 1 until children.length) {
+        if (children(i) > (children(i-1) + 1)){
+          return children(i-1) + 1
+        }
+      }
+      return children.last + 1
+    } else {
+      0
+    }
   }
 }
