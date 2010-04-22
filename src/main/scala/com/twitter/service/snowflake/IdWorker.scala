@@ -52,10 +52,7 @@ class IdWorker(workerId: Long) {
     if (lastTimestamp == timestamp) {
       sequence = (sequence + 1) & sequenceMask
       if (sequence == 0) {
-        while (lastTimestamp == timestamp) {
-          sleeper()
-          timestamp = timeGen()
-        }
+        timestamp = tilNextMillis(lastTimestamp, timeGen)
       }
     } else {
       sequence = 0
@@ -67,6 +64,13 @@ class IdWorker(workerId: Long) {
     (workerId << workerIdShift) | sequence
   }
 
+  def tilNextMillis(lastTimestamp:Long, timeGen: (() => Long)):Long = {
+    var timestamp = timeGen()
+    while (lastTimestamp == timestamp) {
+      timestamp = timeGen()
+    }
+    timestamp
+  }
   def sleeper() = {
     Thread.sleep(1)
   }
