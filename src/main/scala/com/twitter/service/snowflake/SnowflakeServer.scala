@@ -83,7 +83,7 @@ object SnowflakeServer {
 
   def loadServerId() {
     serverId = Configgy.config.getInt("server_id", -1)
-    val zk_path = Configgy.config.getString("zookeper_host_id_path", "/snowflake-servers")
+    val zk_path = Configgy.config.getString("zookeper_worker_id_path", "/snowflake-servers")
     if (serverId < 0) {
       val watcher = new FakeWatcher;
       val zkClient = new ZookeeperClient(watcher, Configgy.config.getString("zookeeper-client.hostlist", "localhost:2181"), Configgy.config);
@@ -111,7 +111,7 @@ object SnowflakeServer {
           serverId = id;
         } catch {
           case e: KeeperException => {
-            log.debug("host id collision, retrying")
+            log.debug("workerId collision, retrying")
           }
         }
       }
