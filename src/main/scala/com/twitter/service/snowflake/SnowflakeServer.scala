@@ -120,7 +120,7 @@ object SnowflakeServer {
   def getHostname(): String = {
     return java.net.InetAddress.getLocalHost().getHostName();
   }
-  
+
   def findFirstAvailableId(children:Array[Int]): Int = {
     if (children.length > 0) {
       for (i <- 1 until children.length) {
