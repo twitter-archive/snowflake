@@ -21,8 +21,8 @@ Current logic for id generation:
                 /      \                          |
        YES     /        \  NO                     |
   +-------------+    +------------+               |
-  |   Sleep     |    |            |               |
-  |  for 1ms    |    |    Done.   |               |
+  |  Busy wait  |    |            |               |
+  | til next ms |    |    Done.   |               |
   |    and      |    |            |               |
   |   reset     |    |            |               |
   |   currTS    |    |            |               |
