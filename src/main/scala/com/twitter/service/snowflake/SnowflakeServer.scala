@@ -21,13 +21,19 @@ import org.apache.thrift.protocol.TBinaryProtocol
 import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
 import scala.tools.nsc.MainGenericRunner
-
+import com.twitter.zookeeper.client._
+import org.apache.zookeeper.ZooDefs.Ids
+import org.apache.zookeeper.data.{ACL, Id}
+import org.apache.zookeeper.CreateMode._
+import org.apache.zookeeper.KeeperException
+import scala.util.Sorting
+import java.net.InetAddress
 
 object SnowflakeServer {
   private val log = Logger.get
   val runtime = new RuntimeEnvironment(getClass)
   var server: TServer = null
-  var serverId:Int = 0
+  var serverId:Int  = -1
   val workers = new scala.collection.mutable.ListBuffer[Snowflake]()
   //TODO: what array should be passed in here?
   //val w3c = new W3CStats(Logger.get("w3c"), Array("ids_generated"))
@@ -43,14 +49,12 @@ object SnowflakeServer {
   def main(args: Array[String]) {
     runtime.load(args)
 
-    serverId = Configgy.config.getInt("server_id").get
+    loadServerId()
     val admin = new AdminService(Configgy.config, runtime)
 
-    try {
-      // paranoia to make sure we don't restart too quickly
-      // and cause ID collisions
-      Thread.sleep(1000)
-    }
+    // paranoia to make sure we don't restart too quickly
+    // and cause ID collisions
+    Thread.sleep(1000)
 
     try {
       val worker = new Snowflake(serverId)
@@ -76,5 +80,51 @@ object SnowflakeServer {
         throw e
       }
     }
+  }
+
+  def loadServerId() {
+
+    serverId = Configgy.config.getInt("server_id", -1)
+    if (serverId < 0) {
+      // TODO configgy these
+      val zookeeperHost = "localhost"
+      val zookeeperPort = 2181
+
+      val watcher = new FakeWatcher;
+      val zkClient = new ZookeeperClient(watcher, "%s:%s".format(zookeeperHost, zookeeperPort));
+
+      while (serverId < 0) {
+        try {
+          zkClient.get("/snowflake-servers")
+        } catch {
+          case _ =>  {
+            log.info("/snowflake-servers missing, trying to create it")
+            zkClient.create("/snowflake-servers", Array(), Ids.OPEN_ACL_UNSAFE, PERSISTENT)
+          }
+        }
+
+        try {
+          val children = zkClient.getChildren("/snowflake-servers").map((s:String) => s.toInt).toArray
+          log.debug("found %s children".format(children.length))
+          Sorting.quickSort(children)
+          val id = if (children.length > 0) {
+            children.last + 1
+          } else {
+            0
+          }
+
+          zkClient.create("/snowflake-servers/%s".format(id), getHostname.getBytes(), Ids.OPEN_ACL_UNSAFE, EPHEMERAL)
+          serverId = id;
+        } catch {
+          case e: KeeperException => {
+            log.debug("host id collision, retrying")
+          }
+        }
+      }
+    }
+  }
+
+  def getHostname(): String = {
+    return java.net.InetAddress.getLocalHost().getHostName();
   }
 }
