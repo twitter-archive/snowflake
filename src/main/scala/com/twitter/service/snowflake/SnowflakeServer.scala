@@ -83,24 +83,24 @@ object SnowflakeServer {
   }
 
   def loadServerId() {
-
     serverId = Configgy.config.getInt("server_id", -1)
+    val zk_path = Configgy.config.getString("zookeper_host_id_path", "/snowflake-servers")
     if (serverId < 0) {
       val watcher = new FakeWatcher;
       val zkClient = new ZookeeperClient(watcher, Configgy.config.getString("zookeeper-client.hostlist", "localhost:2181"), Configgy.config);
 
       while (serverId < 0) {
         try {
-          zkClient.get("/snowflake-servers")
+          zkClient.get(zk_path)
         } catch {
           case _ =>  {
-            log.info("/snowflake-servers missing, trying to create it")
-            zkClient.create("/snowflake-servers", Array(), Ids.OPEN_ACL_UNSAFE, PERSISTENT)
+            log.info("%s missing, trying to create it".format(zk_path))
+            zkClient.create(zk_path, Array(), Ids.OPEN_ACL_UNSAFE, PERSISTENT)
           }
         }
 
         try {
-          val children = zkClient.getChildren("/snowflake-servers").map((s:String) => s.toInt).toArray
+          val children = zkClient.getChildren(zk_path).map((s:String) => s.toInt).toArray
           log.debug("found %s children".format(children.length))
           Sorting.quickSort(children)
           val id = if (children.length > 0) {
@@ -109,7 +109,7 @@ object SnowflakeServer {
             0
           }
 
-          zkClient.create("/snowflake-servers/%s".format(id), getHostname.getBytes(), Ids.OPEN_ACL_UNSAFE, EPHEMERAL)
+          zkClient.create("%s/%s".format(zk_path, id), getHostname.getBytes(), Ids.OPEN_ACL_UNSAFE, EPHEMERAL)
           serverId = id;
         } catch {
           case e: KeeperException => {
