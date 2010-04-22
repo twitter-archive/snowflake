@@ -86,12 +86,8 @@ object SnowflakeServer {
 
     serverId = Configgy.config.getInt("server_id", -1)
     if (serverId < 0) {
-      // TODO configgy these
-      val zookeeperHost = "localhost"
-      val zookeeperPort = 2181
-
       val watcher = new FakeWatcher;
-      val zkClient = new ZookeeperClient(watcher, "%s:%s".format(zookeeperHost, zookeeperPort));
+      val zkClient = new ZookeeperClient(watcher, Configgy.config.getString("zookeeper-client.hostlist", "localhost:2181"), Configgy.config);
 
       while (serverId < 0) {
         try {
