@@ -42,17 +42,13 @@ class IdWorker(workerId: Long) {
     timestampLeftShift, workerIdBits, sequenceBits)
 
 
-  def nextId(): Long = {
-    nextId((() => System.currentTimeMillis))
-  }
-
-  def nextId(timeGen: (() => Long)): Long = synchronized {
+  def nextId(): Long = synchronized {
     var timestamp = timeGen()
 
     if (lastTimestamp == timestamp) {
       sequence = (sequence + 1) & sequenceMask
       if (sequence == 0) {
-        timestamp = tilNextMillis(lastTimestamp, timeGen)
+        timestamp = tilNextMillis(lastTimestamp)
       }
     } else {
       sequence = 0
@@ -64,11 +60,13 @@ class IdWorker(workerId: Long) {
     (workerId << workerIdShift) | sequence
   }
 
-  def tilNextMillis(lastTimestamp:Long, timeGen: (() => Long)):Long = {
+  def tilNextMillis(lastTimestamp:Long):Long = {
     var timestamp = timeGen()
     while (lastTimestamp == timestamp) {
       timestamp = timeGen()
     }
     timestamp
   }
+
+  def timeGen():Long = System.currentTimeMillis()
 }
