@@ -8,6 +8,21 @@ class IdWorkerSpec extends Specification {
   val workerMask =    0x00000000003FF000L
   val timestampMask = 0xFFFFFFFFFFC00000L
 
+  class EasyTimeWorker(workerId: Long) extends IdWorker(workerId) {
+    var timeMaker = (() => System.currentTimeMillis)
+    override def timeGen(): Long = {
+      timeMaker()
+    }
+  }
+
+  class WakingIdWorker(workerId: Long) extends EasyTimeWorker(workerId) {
+    var slept = 0
+    override def tilNextMillis(lastTimestamp:Long): Long = {
+      slept += 1
+      super.tilNextMillis(lastTimestamp)
+    }
+   }
+
   "IdWorker" should {
     "properly mask server id" in {
       val workerId = 0xFF
@@ -19,10 +34,11 @@ class IdWorkerSpec extends Specification {
     }
 
     "properly mask timestamp" in {
-      val worker = new IdWorker(255)
+      val worker = new EasyTimeWorker(255)
       for (i <- 1 to 100) {
         val t = System.currentTimeMillis
-        val id = worker.nextId(t)
+        worker.timeMaker = (() => t)
+        val id = worker.nextId
         ((id & timestampMask) >> 22)  must be_==(t - worker.twepoch)
       }
     }
@@ -61,6 +77,32 @@ class IdWorkerSpec extends Specification {
       val t2 = System.currentTimeMillis
       println("generated 1000000 ids in %d ms, or %,.0f ids/second".format(t2 - t, 1000000000.0/(t2-t)))
       1 must be_>(0)
+    }
+
+    "sleep if we would rollover twice in the same millisecond" in {
+      var queue = new scala.collection.mutable.Queue[Long]()
+      val worker = new WakingIdWorker(1)
+      val iter = List(2L, 2L, 3L).elements
+      worker.timeMaker = (() => iter.next)
+      worker.sequence = 4095
+      worker.nextId
+      worker.sequence = 4095
+      worker.nextId
+      worker.slept must be(1)
+    }
+
+    "generate only unique ids" in {
+      val worker = new IdWorker(255)
+      var set = new scala.collection.mutable.HashSet[Long]()
+      val ids = (1 to 2000000).map(i => worker.nextId).force
+      ids.foreach{id =>
+        if (set.contains(id)) {
+          println(java.lang.Long.toString(id, 2))
+        } else {
+          set += id
+        }
+      }
+      set.size must be_==(ids.size)
     }
   }
 }

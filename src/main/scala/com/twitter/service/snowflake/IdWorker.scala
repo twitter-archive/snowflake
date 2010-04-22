@@ -16,10 +16,11 @@ import scala.actors.Actor._
 class IdWorker(workerId: Long) {
   private val log = Logger.get
   var genCounter = Stats.getCounter("ids_generated")
-  var sequence = 0L
+
+  // Tue, 21 Mar 2006 20:50:14.000 GMT
   val twepoch = 1142974214000L
-  // the number of bits used to record the timestamp
-  val timestampBits = 42
+
+  var sequence = 0L
   // the number of bits used to record the worker Id
   val workerIdBits = 10
   val maxWorkerId = -1L ^ (-1L << workerIdBits)
@@ -28,30 +29,43 @@ class IdWorker(workerId: Long) {
 
   val timestampLeftShift = sequenceBits + workerIdBits
   val workerIdShift = sequenceBits
-  val sequenceMask = -1L ^ (-1L << sequenceBits)
+  val sequenceMask = 4095 // -1L ^ (-1L << sequenceBits)
+
+  var lastTimestamp = -1L
 
   // sanity check for workerId
   if (workerId > maxWorkerId) {
     throw new IllegalArgumentException("worker Id can't be greater than %d".format(maxWorkerId))
   }
 
-  log.info("worker starting. timestamp left shift %d, worker id bits %d, sequence bits %d",
+  log.info("worker starting.  timestamp left shift %d, worker id bits %d, sequence bits %d",
     timestampLeftShift, workerIdBits, sequenceBits)
 
+  def nextId(): Long = synchronized {
+    var timestamp = timeGen()
 
-  def nextId(): Long = {
-    nextId(System.currentTimeMillis)
-  }
-
-  def nextId(timestamp: Long): Long = {
-    synchronized {
-      // let this wrap indefinitely.  
-      // At 24 sequence bits this gives us 16 million ids per timestamp increment
-      sequence += 1
-      genCounter.incr()
-      ((timestamp - twepoch) << timestampLeftShift) |
-        (workerId << workerIdShift) | (sequence & sequenceMask)
+    if (lastTimestamp == timestamp) {
+      sequence = (sequence + 1) & sequenceMask
+      if (sequence == 0) {
+        timestamp = tilNextMillis(lastTimestamp)
+      }
+    } else {
+      sequence = 0
     }
+
+    lastTimestamp = timestamp
+    genCounter.incr()
+    ((timestamp - twepoch) << timestampLeftShift) |
+    (workerId << workerIdShift) | sequence
   }
 
+  def tilNextMillis(lastTimestamp:Long):Long = {
+    var timestamp = timeGen()
+    while (lastTimestamp == timestamp) {
+      timestamp = timeGen()
+    }
+    timestamp
+  }
+
+  def timeGen():Long = System.currentTimeMillis()
 }
