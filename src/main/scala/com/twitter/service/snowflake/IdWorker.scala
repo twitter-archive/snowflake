@@ -71,7 +71,4 @@ class IdWorker(workerId: Long) {
     }
     timestamp
   }
-  def sleeper() = {
-    Thread.sleep(1)
-  }
 }
