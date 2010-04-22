@@ -53,7 +53,7 @@ object SnowflakeServer {
     val admin = new AdminService(Configgy.config, runtime)
 
     // TODO we should sleep for at least as long as our time-drift SLA
-    Thread.sleep(1000)
+    Thread.sleep(Configgy.config.getLong("snowflake.startup_sleep_ms", 1000L))
 
     try {
       val worker = new Snowflake(workerId)
