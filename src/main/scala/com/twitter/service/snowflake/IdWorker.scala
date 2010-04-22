@@ -31,8 +31,8 @@ class IdWorker(workerId: Long) {
   val sequenceMask = -1L ^ (-1L << sequenceBits)
 
   // sanity check for workerId
-  if (workerId > maxWorkerId) {
-    throw new IllegalArgumentException("worker Id can't be greater than %d".format(maxWorkerId))
+  if (workerId > maxWorkerId || workerId < 0) {
+    throw new IllegalArgumentException("worker Id can't be greater than %d or less than 0".format(maxWorkerId))
   }
 
   log.info("worker starting. timestamp left shift %d, worker id bits %d, sequence bits %d, workid %d",
