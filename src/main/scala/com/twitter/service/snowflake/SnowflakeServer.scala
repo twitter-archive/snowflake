@@ -99,7 +99,6 @@ object SnowflakeServer {
       }
 
       try {
-        // TODO fill gaps in id numbers
         val children = zkClient.getChildren(zk_path).map((s:String) => s.toInt).toArray
         log.debug("found %s children".format(children.length))
         Sorting.quickSort(children)
