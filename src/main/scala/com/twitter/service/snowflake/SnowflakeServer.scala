@@ -33,7 +33,7 @@ object SnowflakeServer {
   private val log = Logger.get
   val runtime = new RuntimeEnvironment(getClass)
   var server: TServer = null
-  var serverId:Int  = -1
+  var workerId:Int  = -1
   val workers = new scala.collection.mutable.ListBuffer[Snowflake]()
   //TODO: what array should be passed in here?
   //val w3c = new W3CStats(Logger.get("w3c"), Array("ids_generated"))
@@ -49,14 +49,14 @@ object SnowflakeServer {
   def main(args: Array[String]) {
     runtime.load(args)
 
-    loadServerId()
+    loadWorkerId()
     val admin = new AdminService(Configgy.config, runtime)
 
     // TODO we should sleep for at least as long as our time-drift SLA
     Thread.sleep(1000)
 
     try {
-      val worker = new Snowflake(serverId)
+      val worker = new Snowflake(workerId)
       workers += worker
       val PORT = Configgy.config.getInt("snowflake.server_port", 7911)
       log.info("snowflake.server_port loaded: %s", PORT)
@@ -81,38 +81,37 @@ object SnowflakeServer {
     }
   }
 
-  def loadServerId() {
-    serverId = Configgy.config.getInt("server_id", -1)
-    val zk_path = Configgy.config.getString("zookeper_worker_id_path", "/snowflake-servers")
-    if (serverId < 0) {
-      val watcher = new FakeWatcher;
-      val zkClient = new ZookeeperClient(watcher, Configgy.config.getString("zookeeper-client.hostlist", "localhost:2181"), Configgy.config);
+  def loadWorkerId() {
+    workerId = Configgy.config.getInt("worker_id", -1)
+    val zk_path = Configgy.config.getString("zookeper_worker_id_path", "/snowflake-workers")
 
-      while (serverId < 0) {
-        try {
-          zkClient.get(zk_path)
-        } catch {
-          case _ =>  {
-            log.info("%s missing, trying to create it".format(zk_path))
-            zkClient.create(zk_path, Array(), Ids.OPEN_ACL_UNSAFE, PERSISTENT)
-          }
+    val watcher = new FakeWatcher;
+    val zkClient = new ZookeeperClient(watcher, Configgy.config.getString("zookeeper-client.hostlist", "localhost:2181"), Configgy.config);
+
+    while (workerId < 0) {
+      try {
+        zkClient.get(zk_path)
+      } catch {
+        case _ =>  {
+          log.info("%s missing, trying to create it".format(zk_path))
+          zkClient.create(zk_path, Array(), Ids.OPEN_ACL_UNSAFE, PERSISTENT)
         }
+      }
 
-        try {
-          // TODO fill gaps in id numbers
-          val children = zkClient.getChildren(zk_path).map((s:String) => s.toInt).toArray
-          log.debug("found %s children".format(children.length))
-          Sorting.quickSort(children)
-          val id = findFirstAvailableId(children)
+      try {
+        // TODO fill gaps in id numbers
+        val children = zkClient.getChildren(zk_path).map((s:String) => s.toInt).toArray
+        log.debug("found %s children".format(children.length))
+        Sorting.quickSort(children)
+        val id = findFirstAvailableId(children)
 
-          log.debug("trying to claim workerId %d".format(id))
-          zkClient.create("%s/%s".format(zk_path, id), getHostname.getBytes(), Ids.OPEN_ACL_UNSAFE, EPHEMERAL)
-          log.debug("successfully claimed workerId %d".format(id))
-          serverId = id;
-        } catch {
-          case e: KeeperException => {
-            log.debug("workerId collision, retrying")
-          }
+        log.debug("trying to claim workerId %d".format(id))
+        zkClient.create("%s/%s".format(zk_path, id), getHostname.getBytes(), Ids.OPEN_ACL_UNSAFE, EPHEMERAL)
+        log.debug("successfully claimed workerId %d".format(id))
+        workerId = id;
+      } catch {
+        case e: KeeperException => {
+          log.debug("workerId collision, retrying")
         }
       }
     }
