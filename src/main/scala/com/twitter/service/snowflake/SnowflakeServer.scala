@@ -121,13 +121,15 @@ object SnowflakeServer {
   }
 
   def findFirstAvailableId(children:Array[Int]): Int = {
-    if (children.length > 0) {
+    if (children.length > 1) {
       for (i <- 1 until children.length) {
         if (children(i) > (children(i-1) + 1)){
           return children(i-1) + 1
         }
       }
       return children.last + 1
+    } else if (children.length == 1 && children.first == 0){
+      1
     } else {
       0
     }
