@@ -4,8 +4,6 @@ package com.twitter.service.snowflake
 import com.twitter.ostrich.Stats
 import com.twitter.service.snowflake.gen._
 import net.lag.logging.Logger
-import scala.actors.Actor
-import scala.actors.Actor._
 
 /**
  * An object that generates IDs.
@@ -41,9 +39,12 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
 
   def get_id(useragent: String): Long = {
     val id = nextId()
-    validUseragent(useragent)
-    // log what we have out, including useragent
-    id
+    if (validUseragent(useragent)) {
+      // log what we have out, including useragent
+      id
+    } else {
+      throw new InvalidUserAgentError
+    }
   }
   def get_worker_id(): Long = workerId
   def get_timestamp() = System.currentTimeMillis
