@@ -1,4 +1,4 @@
-/** Copyright 2008 Twitter, Inc. */
+/** Copyright 2010 Twitter, Inc. */
 package com.twitter.service.snowflake
 
 import com.twitter.service.snowflake.gen._

@@ -1,4 +1,4 @@
-/* Copyright 2008 Twitter, Inc. */
+/* Copyright 2010 Twitter, Inc. */
 namespace java com.twitter.service.snowflake.gen
 namespace ruby Twitter.Snowflake
 
