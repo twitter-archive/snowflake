@@ -2,6 +2,7 @@
 package com.twitter.service.snowflake
 
 import com.twitter.ostrich.Stats
+import com.twitter.ostrich.W3CReporter
 import com.twitter.service.snowflake.gen._
 import net.lag.logging.Logger
 
@@ -13,6 +14,7 @@ import net.lag.logging.Logger
  */
 class IdWorker(workerId: Long) extends Snowflake.Iface {
   private val log = Logger.get
+  private val idLog = Logger.get("w3c")
   var genCounter = Stats.getCounter("ids_generated")
 
   // Tue, 21 Mar 2006 20:50:14.000 GMT
@@ -25,7 +27,7 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
 
   val timestampLeftShift = sequenceBits + workerIdBits
   val workerIdShift = sequenceBits
-  val sequenceMask = 4095 // -1L ^ (-1L << sequenceBits)
+  val sequenceMask = -1L ^ (-1L << sequenceBits)
 
   var lastTimestamp = -1L
 
@@ -38,14 +40,15 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
     timestampLeftShift, workerIdBits, sequenceBits, workerId)
 
   def get_id(useragent: String): Long = {
-    val id = nextId()
-    if (validUseragent(useragent)) {
-      // log what we have out, including useragent
-      id
-    } else {
+    if (!validUseragent(useragent)) {
       throw new InvalidUserAgentError
     }
+
+    val id = nextId()
+    idLog.report(Map("id" -> id))
+    id
   }
+
   def get_worker_id(): Long = workerId
   def get_timestamp() = System.currentTimeMillis
 
