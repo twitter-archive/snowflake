@@ -15,7 +15,7 @@ class StatusReportHandler extends CustomHttpHandler {
     </head>
     <body>
       <table>
-        <tr><td>Server Id</td><td>{SnowflakeServer.serverId}</td></tr>
+        <tr><td>Worker Id</td><td>{SnowflakeServer.workerId}</td></tr>
         <tr><td>Timestamp</td><td>{System.currentTimeMillis}</td></tr>
         <tr><td>Time</td><td>{new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date())}</td></tr>
         <tr><td>IDs Generated</td><td>{Stats.getCounter("ids_generated")()}</td></tr>

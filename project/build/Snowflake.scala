@@ -36,6 +36,7 @@ class SnowflakeProject(info: ProjectInfo) extends DefaultProject(info) {
   val objenesis = "org.objenesis" % "objenesis" % "1.1"
   val twitter = "com.twitter" % "json" % "1.1"
   val sp = "org.scala-tools.testing" % "specs"  % "1.6.2"
+  val javautils = "org.scala-tools" % "javautils" % "2.7.4-0.1"
 
   def generatedThriftDirectoryPath = "src_managed" / "main"
   def thriftDirectoryPath = "src" / "main" / "thrift"

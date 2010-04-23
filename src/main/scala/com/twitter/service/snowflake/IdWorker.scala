@@ -34,12 +34,12 @@ class IdWorker(workerId: Long) {
   var lastTimestamp = -1L
 
   // sanity check for workerId
-  if (workerId > maxWorkerId) {
-    throw new IllegalArgumentException("worker Id can't be greater than %d".format(maxWorkerId))
+  if (workerId > maxWorkerId || workerId < 0) {
+    throw new IllegalArgumentException("worker Id can't be greater than %d or less than 0".format(maxWorkerId))
   }
 
-  log.info("worker starting.  timestamp left shift %d, worker id bits %d, sequence bits %d",
-    timestampLeftShift, workerIdBits, sequenceBits)
+  log.info("worker starting. timestamp left shift %d, worker id bits %d, sequence bits %d, workid %d",
+    timestampLeftShift, workerIdBits, sequenceBits, workerId)
 
   def nextId(): Long = synchronized {
     var timestamp = timeGen()
