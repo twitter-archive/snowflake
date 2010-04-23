@@ -19,6 +19,7 @@ import org.apache.zookeeper.CreateMode._
 import org.apache.zookeeper.KeeperException
 import scala.util.Sorting
 import java.net.InetAddress
+import scala.collection.mutable.HashMap
 
 object SnowflakeServer {
   private val log = Logger.get
@@ -26,6 +27,10 @@ object SnowflakeServer {
   var server: TServer = null
   var workerId:Int  = -1
   val workers = new scala.collection.mutable.ListBuffer[IdWorker]()
+  lazy val zkPath = Configgy.config.getString("zookeper_worker_id_path", "/snowflake-workers")
+  lazy val zkWatcher = new FakeWatcher;
+  lazy val zkClient = new ZookeeperClient(zkWatcher, Configgy.config.getString("zookeeper-client.hostlist", "localhost:2181"), Configgy.config);
+
   //TODO: what array should be passed in here?
   //val w3c = new W3CStats(Logger.get("w3c"), Array("ids_generated"))
 
@@ -74,37 +79,44 @@ object SnowflakeServer {
 
   def loadWorkerId() {
     workerId = Configgy.config.getInt("worker_id", -1)
-    val zk_path = Configgy.config.getString("zookeper_worker_id_path", "/snowflake-workers")
-
-    val watcher = new FakeWatcher;
-    val zkClient = new ZookeeperClient(watcher, Configgy.config.getString("zookeeper-client.hostlist", "localhost:2181"), Configgy.config);
 
     while (workerId < 0) {
       try {
-        zkClient.get(zk_path)
-      } catch {
-        case _ =>  {
-          log.info("%s missing, trying to create it".format(zk_path))
-          zkClient.create(zk_path, Array(), Ids.OPEN_ACL_UNSAFE, PERSISTENT)
-        }
-      }
-
-      try {
-        val children = zkClient.getChildren(zk_path).map((s:String) => s.toInt).toArray
-        log.debug("found %s children".format(children.length))
+        val p = peers()
+        val children = p.keys.collect.toArray
         Sorting.quickSort(children)
         val id = findFirstAvailableId(children)
 
-        log.debug("trying to claim workerId %d".format(id))
-        zkClient.create("%s/%s".format(zk_path, id), getHostname.getBytes(), Ids.OPEN_ACL_UNSAFE, EPHEMERAL)
-        log.debug("successfully claimed workerId %d".format(id))
+        log.info("trying to claim workerId %d".format(id))
+        zkClient.create("%s/%s".format(zkPath, id), getHostname.getBytes(), Ids.OPEN_ACL_UNSAFE, EPHEMERAL)
+        log.info("successfully claimed workerId %d".format(id))
         workerId = id;
       } catch {
         case e: KeeperException => {
-          log.debug("workerId collision, retrying")
+          log.info("workerId collision, retrying")
         }
       }
     }
+  }
+
+  def peers():HashMap[Int, String] = {
+    var peerMap = new HashMap[Int, String]
+    try {
+      zkClient.get(zkPath)
+    } catch {
+      case _ =>  {
+        log.info("%s missing, trying to create it".format(zkPath))
+        zkClient.create(zkPath, Array(), Ids.OPEN_ACL_UNSAFE, PERSISTENT)
+      }
+    }
+
+    val children = zkClient.getChildren(zkPath)
+    children.foreach {i =>
+      peerMap(i.toInt) = zkClient.get("%s/%s".format(zkPath, i)).toString
+    }
+    log.info("found %s children".format(children.length))
+
+    return peerMap
   }
 
   def getHostname(): String = {
