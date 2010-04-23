@@ -6,18 +6,9 @@ import com.twitter.ostrich.W3CStats
 import org.apache.thrift.TException
 import org.apache.thrift.TProcessor
 import org.apache.thrift.TProcessorFactory
-import org.apache.thrift.protocol.TProtocol
-import org.apache.thrift.protocol.TProtocolFactory
-import org.apache.thrift.transport.TNonblockingServerSocket
-import org.apache.thrift.transport.TServerTransport
-import org.apache.thrift.transport.TServerSocket
-import org.apache.thrift.transport.TTransport
-import org.apache.thrift.transport.TTransportFactory
-import org.apache.thrift.transport.TTransportException
-import org.apache.thrift.server.THsHaServer
-import org.apache.thrift.server.TServer
-import org.apache.thrift.server.TThreadPoolServer
-import org.apache.thrift.protocol.TBinaryProtocol
+import org.apache.thrift.protocol._
+import org.apache.thrift.transport._
+import org.apache.thrift.server._
 import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
 import scala.tools.nsc.MainGenericRunner
