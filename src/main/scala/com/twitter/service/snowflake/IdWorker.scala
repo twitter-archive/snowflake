@@ -4,11 +4,9 @@ package com.twitter.service.snowflake
 import com.twitter.ostrich.Stats
 import com.twitter.service.snowflake.gen._
 import net.lag.logging.Logger
-import scala.actors.Actor
-import scala.actors.Actor._
 
 /**
- * An object that generates IDs.  
+ * An object that generates IDs.
  * This is broken into a separate class in case
  * we ever want to support multiple worker threads
  * per process
@@ -21,10 +19,8 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
   val twepoch = 1142974214000L
 
   var sequence = 0L
-  // the number of bits used to record the worker Id
   val workerIdBits = 10
   val maxWorkerId = -1L ^ (-1L << workerIdBits)
-  // the number of bits used to record the sequence
   val sequenceBits = 12
 
   val timestampLeftShift = sequenceBits + workerIdBits
@@ -41,10 +37,17 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
   log.info("worker starting. timestamp left shift %d, worker id bits %d, sequence bits %d, workid %d",
     timestampLeftShift, workerIdBits, sequenceBits, workerId)
 
-  def get_id(): Long = nextId
+  def get_id(useragent: String): Long = {
+    val id = nextId()
+    if (validUseragent(useragent)) {
+      // log what we have out, including useragent
+      id
+    } else {
+      throw new InvalidUserAgentError
+    }
+  }
   def get_worker_id(): Long = workerId
   def get_timestamp() = System.currentTimeMillis
-
 
   def nextId(): Long = synchronized {
     var timestamp = timeGen()
@@ -73,4 +76,11 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
   }
 
   def timeGen():Long = System.currentTimeMillis()
+
+  val AgentParser = """([a-zA-Z]*)\-([a-zA-Z]*)""".r
+
+  def validUseragent(useragent: String): Boolean = useragent match {
+    case AgentParser(thing, subthing) => true
+    case _                   => false
+  }
 }

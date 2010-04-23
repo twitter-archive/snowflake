@@ -2,12 +2,12 @@
 namespace java com.twitter.service.snowflake.gen
 namespace ruby Twitter.Snowflake
 
-/**
- * This is what the Merge Layer talks to.
- */
+exception InvalidUserAgentError {
+  1: string message,
+}
 
 service Snowflake {
   i64 get_worker_id()
   i64 get_timestamp()
-  i64 get_id()
+  i64 get_id(1:string useragent)
 }
