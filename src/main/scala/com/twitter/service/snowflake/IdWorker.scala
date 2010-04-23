@@ -45,7 +45,7 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
     }
 
     val id = nextId()
-    idLog.report(Map("id" -> id))
+    idLog.report(Map("id" -> id, "useragent" -> useragent))
     id
   }
 
