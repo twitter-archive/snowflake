@@ -27,7 +27,7 @@ class IdWorkerSpec extends Specification {
 
     "generate an id" in {
       val s = new IdWorker(1)
-      val id: Long = s.get_id()
+      val id: Long = s.nextId()
       id must be_>(0L)
     }
 
@@ -41,7 +41,6 @@ class IdWorkerSpec extends Specification {
       val s = new IdWorker(1)
       s.get_worker_id() must be_==(1L)
     }
-
 
     "properly mask server id" in {
       val workerId = 0xFF
@@ -124,5 +123,24 @@ class IdWorkerSpec extends Specification {
       }
       set.size must be_==(n)
     }
+  }
+
+  "validUseragent" should {
+    "accept the simple case" in {
+      val worker = new IdWorker(1)
+      worker.validUseragent("infra-dm") must be_==(true);
+    }
+
+    "reject numbers" in {
+      val worker = new IdWorker(1)
+      worker.validUseragent("1") must be_==(false)
+      worker.validUseragent("1-2") must be_==(false)
+    }
+
+    "reject missing product name" in {
+      val worker = new IdWorker(1)
+      worker.validUseragent("infra") must be_==(false)
+    }
+
   }
 }
