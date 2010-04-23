@@ -13,7 +13,7 @@ import scala.actors.Actor._
  * we ever want to support multiple worker threads
  * per process
  */
-class IdWorker(workerId: Long) {
+class IdWorker(workerId: Long) extends Snowflake.Iface {
   private val log = Logger.get
   var genCounter = Stats.getCounter("ids_generated")
 
@@ -40,6 +40,11 @@ class IdWorker(workerId: Long) {
 
   log.info("worker starting. timestamp left shift %d, worker id bits %d, sequence bits %d, workid %d",
     timestampLeftShift, workerIdBits, sequenceBits, workerId)
+
+  def get_id(): Long = nextId
+  def get_worker_id(): Long = workerId
+  def get_timestamp() = System.currentTimeMillis
+
 
   def nextId(): Long = synchronized {
     var timestamp = timeGen()

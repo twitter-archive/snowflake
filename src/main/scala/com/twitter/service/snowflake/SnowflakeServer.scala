@@ -34,7 +34,7 @@ object SnowflakeServer {
   val runtime = new RuntimeEnvironment(getClass)
   var server: TServer = null
   var workerId:Int  = -1
-  val workers = new scala.collection.mutable.ListBuffer[Snowflake]()
+  val workers = new scala.collection.mutable.ListBuffer[IdWorker]()
   //TODO: what array should be passed in here?
   //val w3c = new W3CStats(Logger.get("w3c"), Array("ids_generated"))
 
@@ -56,7 +56,7 @@ object SnowflakeServer {
     Thread.sleep(Configgy.config.getLong("snowflake.startup_sleep_ms", 1000L))
 
     try {
-      val worker = new Snowflake(workerId)
+      val worker = new IdWorker(workerId)
       workers += worker
       val PORT = Configgy.config.getInt("snowflake.server_port", 7911)
       log.info("snowflake.server_port loaded: %s", PORT)
