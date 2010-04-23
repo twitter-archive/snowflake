@@ -25,7 +25,7 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
 
   val timestampLeftShift = sequenceBits + workerIdBits
   val workerIdShift = sequenceBits
-  val sequenceMask = -1L ^ (-1L << sequenceBits)
+  val sequenceMask = 4095 // -1L ^ (-1L << sequenceBits)
 
   var lastTimestamp = -1L
 
