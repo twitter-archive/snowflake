@@ -12,7 +12,8 @@ import scala.reflect.Manifest
 
 class ThriftClient(implicit man: Manifest[Snowflake.Client]) {
   def newClient(protocol: TProtocol)(implicit m: Manifest[Snowflake.Client]): Snowflake.Client = {
-    val constructor = m.erasure.getDeclaredConstructors.first
+    val constructor = m.erasure.
+    getConstructor(classOf[TProtocol])
     constructor.newInstance(protocol).asInstanceOf[Snowflake.Client]
   }
 
