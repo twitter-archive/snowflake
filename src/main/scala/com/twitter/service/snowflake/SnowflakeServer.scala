@@ -137,6 +137,11 @@ object SnowflakeServer {
       val (workerId, hostname) = d
       try {
         var (t, c) = SnowflakeClient.create(hostname, 7911, 1000);
+        val reportedWorkerId = c.get_worker_id().toLong
+        if (reportedWorkerId != workerId){
+          log.error("Worker at %s has id %d in zookeeper, but via rpc it says %d".format(hostname, workerId, reportedWorkerId))
+          throw new Exception("Worker id insanity.")
+        }
         peerCount += 1
         c.get_timestamp().toLong
       } catch {
