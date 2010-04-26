@@ -125,8 +125,8 @@ object SnowflakeServer {
 
     val children = zkClient.getChildren(zkPath)
     children.foreach {i =>
-      val foo = zkClient.get("%s/%s".format(zkPath, i))
-      peerMap(i.toInt) = new String(foo)
+      val hostname = zkClient.get("%s/%s".format(zkPath, i))
+      peerMap(i.toInt) = new String(hostname)
     }
     log.info("found %s children".format(children.length))
 
