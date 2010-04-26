@@ -13,7 +13,7 @@ import scala.reflect.Manifest
 class ThriftClient(implicit man: Manifest[Snowflake.Client]) {
   def newClient(protocol: TProtocol)(implicit m: Manifest[Snowflake.Client]): Snowflake.Client = {
     val constructor = m.erasure.getDeclaredConstructors.first
-    constructor.newInstance(protocol).asInstanceOf[Snowflake.Client]
+    constructor.newInstance(protocol, protocol).asInstanceOf[Snowflake.Client]
   }
 
   val log = Logger.get
