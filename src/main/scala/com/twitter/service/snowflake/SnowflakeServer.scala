@@ -6,9 +6,18 @@ import com.twitter.ostrich.W3CStats
 import org.apache.thrift.TException
 import org.apache.thrift.TProcessor
 import org.apache.thrift.TProcessorFactory
-import org.apache.thrift.protocol._
-import org.apache.thrift.transport._
-import org.apache.thrift.server._
+import org.apache.thrift.protocol.TProtocol
+import org.apache.thrift.protocol.TProtocolFactory
+import org.apache.thrift.transport.TNonblockingServerSocket
+import org.apache.thrift.transport.TServerTransport
+import org.apache.thrift.transport.TServerSocket
+import org.apache.thrift.transport.TTransport
+import org.apache.thrift.transport.TTransportFactory
+import org.apache.thrift.transport.TTransportException
+import org.apache.thrift.server.THsHaServer
+import org.apache.thrift.server.TServer
+import org.apache.thrift.server.TThreadPoolServer
+import org.apache.thrift.protocol.TBinaryProtocol
 import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
 import scala.tools.nsc.MainGenericRunner
@@ -20,6 +29,7 @@ import org.apache.zookeeper.KeeperException
 import scala.util.Sorting
 import java.net.InetAddress
 import scala.collection.mutable.HashMap
+import com.twitter.service.snowflake.client.SnowflakeClient
 
 object SnowflakeServer {
   private val log = Logger.get
@@ -45,6 +55,7 @@ object SnowflakeServer {
   def main(args: Array[String]) {
     runtime.load(args)
 
+    sanityCheckPeers() // make this disable-able via configgy
     loadWorkerId()
     val admin = new AdminService(Configgy.config, runtime)
 
@@ -112,11 +123,36 @@ object SnowflakeServer {
 
     val children = zkClient.getChildren(zkPath)
     children.foreach {i =>
-      peerMap(i.toInt) = zkClient.get("%s/%s".format(zkPath, i)).toString
+      val foo = zkClient.get("%s/%s".format(zkPath, i))
+      peerMap(i.toInt) = new String(foo)
     }
     log.info("found %s children".format(children.length))
 
     return peerMap
+  }
+
+  def sanityCheckPeers() {
+    var peerCount = 0L
+    var timestamps = peers().map{d =>
+      val (workerId, hostname) = d
+      try {
+        var (t, c) = SnowflakeClient.create(hostname, 7911, 1000);
+        peerCount += 1
+        c.get_timestamp().toLong
+      } catch {
+        case e: org.apache.thrift.transport.TTransportException => {
+          log.error("Couldn't talk to peer %s at %s".format(workerId, hostname))
+          throw e
+        }
+      }
+    }
+
+    val avg = timestamps.foldLeft(0L)(_ + _) / peerCount
+    if (Math.abs(System.currentTimeMillis - avg) > 10000){
+      log.error("""Timestamp sanity check failed. Mean timestamp is %d, but mine is %d, 
+        so I'm more than 10s away from the mean""".format(avg, System.currentTimeMillis))
+      throw new Exception("timestamp sanity check failed")
+    }
   }
 
   def getHostname(): String = {
