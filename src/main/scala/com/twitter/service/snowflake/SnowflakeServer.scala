@@ -55,7 +55,9 @@ object SnowflakeServer {
   def main(args: Array[String]) {
     runtime.load(args)
 
-    sanityCheckPeers() // make this disable-able via configgy
+    if (!Configgy.config.getBool("snowflake.skip_sanity_checks", false)) {
+      sanityCheckPeers()
+    }
     loadWorkerId()
     val admin = new AdminService(Configgy.config, runtime)
 
