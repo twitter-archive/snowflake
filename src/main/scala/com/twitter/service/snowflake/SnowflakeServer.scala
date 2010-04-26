@@ -144,7 +144,7 @@ object SnowflakeServer {
           log.error("Worker at %s has id %d in zookeeper, but via rpc it says %d".format(hostname, workerId, reportedWorkerId))
           throw new Exception("Worker id insanity.")
         }
-        peerCount += 1
+        peerCount += 1 // FIXME Can we do this better Scala doodz?
         c.get_timestamp().toLong
       } catch {
         case e: org.apache.thrift.transport.TTransportException => {
@@ -154,11 +154,13 @@ object SnowflakeServer {
       }
     }
 
-    val avg = timestamps.foldLeft(0L)(_ + _) / peerCount
-    if (Math.abs(System.currentTimeMillis - avg) > 10000){
-      log.error("""Timestamp sanity check failed. Mean timestamp is %d, but mine is %d, 
-        so I'm more than 10s away from the mean""".format(avg, System.currentTimeMillis))
-      throw new Exception("timestamp sanity check failed")
+    if (peerCount > 0) { // only run if peers exist
+      val avg = timestamps.foldLeft(0L)(_ + _) / peerCount
+      if (Math.abs(System.currentTimeMillis - avg) > 10000){
+        log.error("""Timestamp sanity check failed. Mean timestamp is %d, but mine is %d, 
+                  so I'm more than 10s away from the mean""".format(avg, System.currentTimeMillis))
+        throw new Exception("timestamp sanity check failed")
+      }
     }
   }
 
