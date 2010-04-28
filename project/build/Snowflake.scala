@@ -53,6 +53,7 @@ class SnowflakeProject(info: ProjectInfo) extends DefaultProject(info) {
 
   lazy val thriftJava = thriftTask("java", generatedThriftDirectoryPath, thriftFile) describedAs("Build Thrift Java")
 
+  override def disableCrossPaths = true
   override def compileAction = super.compileAction dependsOn(thriftJava)
   override def compileOrder = CompileOrder.JavaThenScala
   override def mainClass = Some("com.twitter.service.snowflake.SnowflakeServer")
