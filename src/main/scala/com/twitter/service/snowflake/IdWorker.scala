@@ -67,10 +67,10 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
     lastTimestamp = timestamp
     genCounter.incr()
     ((timestamp - twepoch) << timestampLeftShift) |
-    (workerId << workerIdShift) | sequence
+      (workerId << workerIdShift) | sequence
   }
 
-  def tilNextMillis(lastTimestamp:Long):Long = {
+  def tilNextMillis(lastTimestamp: Long): Long = {
     var timestamp = timeGen()
     while (lastTimestamp == timestamp) {
       timestamp = timeGen()
@@ -78,12 +78,12 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
     timestamp
   }
 
-  def timeGen():Long = System.currentTimeMillis()
+  def timeGen(): Long = System.currentTimeMillis()
 
   val AgentParser = """([a-zA-Z]*)\-([a-zA-Z]*)""".r
 
   def validUseragent(useragent: String): Boolean = useragent match {
     case AgentParser(thing, subthing) => true
-    case _                   => false
+    case _ => false
   }
 }

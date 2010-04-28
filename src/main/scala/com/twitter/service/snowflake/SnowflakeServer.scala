@@ -28,18 +28,18 @@ import org.apache.zookeeper.CreateMode._
 import org.apache.zookeeper.KeeperException
 import scala.util.Sorting
 import java.net.InetAddress
-import scala.collection.mutable.HashMap
+import scala.collection.mutable
 import com.twitter.service.snowflake.client.SnowflakeClient
 
 object SnowflakeServer {
   private val log = Logger.get
   val runtime = new RuntimeEnvironment(getClass)
   var server: TServer = null
-  var workerId:Int  = -1
-  val workers = new scala.collection.mutable.ListBuffer[IdWorker]()
+  var workerId: Int = -1
+  val workers = new mutable.ListBuffer[IdWorker]()
   lazy val zkPath = Configgy.config.getString("zookeper_worker_id_path", "/snowflake-workers")
-  lazy val zkWatcher = new FakeWatcher;
-  lazy val zkClient = new ZookeeperClient(zkWatcher, Configgy.config.getString("zookeeper-client.hostlist", "localhost:2181"), Configgy.config);
+  lazy val zkWatcher = new FakeWatcher
+  lazy val zkClient = new ZookeeperClient(zkWatcher, Configgy.config.getString("zookeeper-client.hostlist", "localhost:2181"), Configgy.config)
 
   //TODO: what array should be passed in here?
   //val w3c = new W3CStats(Logger.get("w3c"), Array("ids_generated"))
@@ -100,9 +100,9 @@ object SnowflakeServer {
         Sorting.quickSort(children)
         val id = findFirstAvailableId(children)
 
-        log.info("trying to claim workerId %d".format(id))
+        log.info("trying to claim workerId %d", id)
         zkClient.create("%s/%s".format(zkPath, id), getHostname.getBytes(), Ids.OPEN_ACL_UNSAFE, EPHEMERAL)
-        log.info("successfully claimed workerId %d".format(id))
+        log.info("successfully claimed workerId %d", id)
         workerId = id;
       } catch {
         case e: KeeperException => {
@@ -112,19 +112,19 @@ object SnowflakeServer {
     }
   }
 
-  def peers():HashMap[Int, String] = {
-    var peerMap = new HashMap[Int, String]
+  def peers(): mutable.HashMap[Int, String] = {
+    var peerMap = new mutable.HashMap[Int, String]
     try {
       zkClient.get(zkPath)
     } catch {
-      case _ =>  {
-        log.info("%s missing, trying to create it".format(zkPath))
+      case _ => {
+        log.info("%s missing, trying to create it", zkPath)
         zkClient.create(zkPath, Array(), Ids.OPEN_ACL_UNSAFE, PERSISTENT)
       }
     }
 
     val children = zkClient.getChildren(zkPath)
-    children.foreach {i =>
+    children.foreach { i =>
       val hostname = zkClient.get("%s/%s".format(zkPath, i))
       peerMap(i.toInt) = new String(hostname)
     }
@@ -135,20 +135,20 @@ object SnowflakeServer {
 
   def sanityCheckPeers() {
     var peerCount = 0L
-    var timestamps = peers().map{d =>
+    var timestamps = peers().map { d =>
       val (workerId, hostname) = d
       try {
-        var (t, c) = SnowflakeClient.create(hostname, 7911, 1000);
+        var (t, c) = SnowflakeClient.create(hostname, 7911, 1000)
         val reportedWorkerId = c.get_worker_id().toLong
-        if (reportedWorkerId != workerId){
-          log.error("Worker at %s has id %d in zookeeper, but via rpc it says %d".format(hostname, workerId, reportedWorkerId))
+        if (reportedWorkerId != workerId) {
+          log.error("Worker at %s has id %d in zookeeper, but via rpc it says %d", hostname, workerId, reportedWorkerId)
           throw new Exception("Worker id insanity.")
         }
         peerCount += 1 // FIXME Can we do this better Scala doodz?
         c.get_timestamp().toLong
       } catch {
         case e: org.apache.thrift.transport.TTransportException => {
-          log.error("Couldn't talk to peer %s at %s".format(workerId, hostname))
+          log.error("Couldn't talk to peer %s at %s", workerId, hostname)
           throw e
         }
       }
@@ -156,27 +156,27 @@ object SnowflakeServer {
 
     if (peerCount > 0) { // only run if peers exist
       val avg = timestamps.foldLeft(0L)(_ + _) / peerCount
-      if (Math.abs(System.currentTimeMillis - avg) > 10000){
-        log.error("""Timestamp sanity check failed. Mean timestamp is %d, but mine is %d, 
-                  so I'm more than 10s away from the mean""".format(avg, System.currentTimeMillis))
+      if (Math.abs(System.currentTimeMillis - avg) > 10000) {
+        log.error("Timestamp sanity check failed. Mean timestamp is %d, but mine is %d, " +
+                  "so I'm more than 10s away from the mean", avg, System.currentTimeMillis)
         throw new Exception("timestamp sanity check failed")
       }
     }
   }
 
   def getHostname(): String = {
-    return java.net.InetAddress.getLocalHost().getHostName();
+    return InetAddress.getLocalHost().getHostName()
   }
 
-  def findFirstAvailableId(children:Array[Int]): Int = {
+  def findFirstAvailableId(children: Array[Int]): Int = {
     if (children.length > 1) {
       for (i <- 1 until children.length) {
-        if (children(i) > (children(i-1) + 1)){
+        if (children(i) > (children(i - 1) + 1)) {
           return children(i-1) + 1
         }
       }
       return children.last + 1
-    } else if (children.length == 1 && children.first == 0){
+    } else if (children.length == 1 && children.first == 0) {
       1
     } else {
       0
