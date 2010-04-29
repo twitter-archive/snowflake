@@ -30,7 +30,7 @@ class SnowflakeProject(info: ProjectInfo) extends DefaultProject(info) {
   val xrayspecs = "com.twitter" % "xrayspecs" % "1.0.5"
   val commonsPool = "commons-pool" % "commons-pool" % "1.5.4"
   val commonsCollections = "commons-collections" % "commons-collections" % "3.2.1"
-  val ostrich = "com.twitter" % "ostrich" % "1.1.9"
+  val ostrich = "com.twitter" % "ostrich" % "1.1.15"
   val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1"
   val asm = "asm" % "asm-all" % "2.2"
   val objenesis = "org.objenesis" % "objenesis" % "1.1"

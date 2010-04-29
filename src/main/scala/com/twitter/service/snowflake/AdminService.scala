@@ -7,9 +7,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import net.lag.configgy.{ConfigMap, RuntimeEnvironment}
 
-
-class StatusReportHandler extends CustomHttpHandler {
-  def body = {<html>
+class AdminService(config: ConfigMap, runtime: RuntimeEnvironment) {
+  val adminHttp = new AdminHttpService(config, runtime)
+  adminHttp.addContext("/status/") {
+    <html>
     <head>
       <title>Snowflake Report</title>
     </head>
@@ -21,16 +22,7 @@ class StatusReportHandler extends CustomHttpHandler {
         <tr><td>IDs Generated</td><td>{Stats.getCounter("ids_generated")()}</td></tr>
       </table>
     </body>
-  </html>.toString}
-
-  def handle(exchange: HttpExchange) {
-    render(body, exchange, 200)
+    </html>.toString
   }
-}
-
-
-class AdminService(config: ConfigMap, runtime: RuntimeEnvironment) {
-  val adminHttp = new AdminHttpService(config, runtime)
-  adminHttp.addContext("/status/", new StatusReportHandler())
   adminHttp.start()
 }
