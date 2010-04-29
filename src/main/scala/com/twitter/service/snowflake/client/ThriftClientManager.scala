@@ -15,7 +15,7 @@ import net.lag.logging.Logger
 object ThriftClientManager {
   private val log = Logger.get
 
-  private val soTimeoutMS = Configgy.config.getInt("thrift.so-timeout-ms", 100)
+  private val soTimeoutMS = Configgy.config("thrift.so-timeout-ms").toInt
 
 
   /**

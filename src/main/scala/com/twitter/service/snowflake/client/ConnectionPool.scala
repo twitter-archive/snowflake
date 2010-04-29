@@ -76,22 +76,22 @@ class ConnectionPool(hostname: String, port: Int) {
 
   def getObjectPoolConfig: GenericObjectPool.Config = {
     val config = new GenericObjectPool.Config
-    config.maxActive = Configgy.config.getInt("thrift.max-concurrent-conns", 500)
+    config.maxActive = Configgy.config("thrift.max-concurrent-conns").toInt
     log.info("config.maxActive: %s", config.maxActive)
 
-    config.maxIdle = Configgy.config.getInt("thrift.max-idle-conns", 100)
+    config.maxIdle = Configgy.config("thrift.max-idle-conns").toInt
     log.info("config.maxIdle: %s", config.maxIdle)
 
-    config.minIdle = Configgy.config.getInt("thrift.min-idle-conns", 10)
+    config.minIdle = Configgy.config("thrift.min-idle-conns").toInt
     log.info("config.minIdle: %s", config.minIdle)
 
-    config.maxWait = Configgy.config.getInt("thrift.max-wait", 20)
+    config.maxWait = Configgy.config("thrift.max-wait").toLong
     log.info("config.maxWait: %s", config.maxWait)
 
-    config.timeBetweenEvictionRunsMillis = Configgy.config.getInt("thrift.time-between-eviction-runs-ms", -1)
+    config.timeBetweenEvictionRunsMillis = Configgy.config("thrift.time-between-eviction-runs-ms").toLong
     log.info("config.timeBetweenEvictionRunsMillis: %s", config.timeBetweenEvictionRunsMillis)
 
-    config.minEvictableIdleTimeMillis = Configgy.config.getInt("thrift.min-evictable-idle-time-ms", -1)
+    config.minEvictableIdleTimeMillis = Configgy.config("thrift.min-evictable-idle-time-ms").toLong
     log.info("config.minEvictableIdleTimeMillis: %s", config.minEvictableIdleTimeMillis)
 
     config.whenExhaustedAction = GenericObjectPool.WHEN_EXHAUSTED_FAIL

@@ -37,7 +37,8 @@ object SnowflakeServer {
   var server: TServer = null
   var workerId: Int = -1
   val workers = new mutable.ListBuffer[IdWorker]()
-  lazy val zkPath = Configgy.config.getString("zookeper_worker_id_path", "/snowflake-workers")
+  var PORT = -1
+  lazy val zkPath = Configgy.config("zookeper_worker_id_path")
   lazy val zkWatcher = new FakeWatcher
   lazy val zkClient = new ZookeeperClient(zkWatcher, Configgy.config.getString("zookeeper-client.hostlist", "localhost:2181"), Configgy.config)
 
@@ -55,19 +56,19 @@ object SnowflakeServer {
   def main(args: Array[String]) {
     runtime.load(args)
 
-    if (!Configgy.config.getBool("snowflake.skip_sanity_checks", false)) {
+    if (!Configgy.config("snowflake.skip_sanity_checks").toBoolean) {
       sanityCheckPeers()
     }
     loadWorkerId()
     val admin = new AdminService(Configgy.config, runtime)
 
     // TODO we should sleep for at least as long as our time-drift SLA
-    Thread.sleep(Configgy.config.getLong("snowflake.startup_sleep_ms", 1000L))
+    Thread.sleep(Configgy.config("snowflake.startup_sleep_ms").toLong)
 
     try {
       val worker = new IdWorker(workerId)
       workers += worker
-      val PORT = Configgy.config.getInt("snowflake.server_port", 7911)
+      PORT = Configgy.config("snowflake.server_port").toInt
       log.info("snowflake.server_port loaded: %s", PORT)
 
       val transport = new TNonblockingServerSocket(PORT)
@@ -91,7 +92,7 @@ object SnowflakeServer {
   }
 
   def loadWorkerId() {
-    workerId = Configgy.config.getInt("worker_id", -1)
+    workerId = Configgy.config("worker_id", -1)
 
     while (workerId < 0) {
       try {
@@ -138,7 +139,7 @@ object SnowflakeServer {
     var timestamps = peers().map { d =>
       val (workerId, hostname) = d
       try {
-        var (t, c) = SnowflakeClient.create(hostname, 7911, 1000)
+        var (t, c) = SnowflakeClient.create(hostname, PORT, 1000)
         val reportedWorkerId = c.get_worker_id().toLong
         if (reportedWorkerId != workerId) {
           log.error("Worker at %s has id %d in zookeeper, but via rpc it says %d", hostname, workerId, reportedWorkerId)
