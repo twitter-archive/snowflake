@@ -9,19 +9,21 @@ import net.lag.configgy.ConfigMap
 import net.lag.logging.Logger
 import scala.reflect.Manifest
 
-
-class ThriftClient(implicit man: Manifest[Snowflake.Client]) {
-  def newClient(protocol: TProtocol)(implicit m: Manifest[Snowflake.Client]): Snowflake.Client = {
+/**
+ * T is expected to be your thrift-generated Client class. Example: Snowflake.Client
+ */
+class ThriftClient[T](implicit man: Manifest[T]) {
+  def newClient(protocol: TProtocol)(implicit m: Manifest[T]): T = {
     val constructor = m.erasure.
     getConstructor(classOf[TProtocol])
-    constructor.newInstance(protocol).asInstanceOf[Snowflake.Client]
+    constructor.newInstance(protocol).asInstanceOf[T]
   }
 
   val log = Logger.get
   /**
    * @param soTimeoutMS the Socket timeout for both connect and read.
    */
-  def create(hostname: String, port: Int, soTimeoutMS: Int): (TTransport, Snowflake.Client) = {
+  def create(hostname: String, port: Int, soTimeoutMS: Int): (TTransport, T) = {
     val socket = new TSocket(hostname, port, soTimeoutMS)
     val transport = new TFramedTransport(socket)
     val protocol: TProtocol  = new TBinaryProtocol(transport)
