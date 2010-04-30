@@ -28,8 +28,9 @@ object SnowflakeServer {
   var PORT = -1
   lazy val zkPath = Configgy.config("zookeper_worker_id_path")
   lazy val zkWatcher = new FakeWatcher
-  lazy val zkClient = new ZookeeperClient(zkWatcher, Configgy.config("zookeeper-client.hostlist"),
-                                          Configgy.config)
+  lazy val hostlist = Configgy.config("zookeeper-client.hostlist")
+  log.info("Creating ZooKeeper client connected to %s", hostlist)
+  lazy val zkClient = new ZookeeperClient(zkWatcher, zkHostlist, Configgy.config)
 
   def shutdown(): Unit = {
     if (server != null) {
