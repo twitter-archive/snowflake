@@ -15,7 +15,7 @@ import net.lag.logging.Logger
 class IdWorker(workerId: Long) extends Snowflake.Iface {
   private val log = Logger.get
   private val idLog = new W3CReporter(Logger.get("w3c"))
-  var genCounter = Stats.getCounter("ids_generated")
+  val genCounter = Stats.getCounter("ids_generated")
 
   // Tue, 21 Mar 2006 20:50:14.000 GMT
   val twepoch = 1142974214000L

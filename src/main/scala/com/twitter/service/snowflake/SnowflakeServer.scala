@@ -1,23 +1,12 @@
 /** Copyright 2010 Twitter, Inc. */
 package com.twitter.service.snowflake
 
+import com.twitter.service.snowflake.client.SnowflakeClient
 import com.twitter.service.snowflake.gen._
-import com.twitter.ostrich.W3CStats
-import org.apache.thrift.TException
-import org.apache.thrift.TProcessor
-import org.apache.thrift.TProcessorFactory
-import org.apache.thrift.protocol.TProtocol
-import org.apache.thrift.protocol.TProtocolFactory
-import org.apache.thrift.transport.TNonblockingServerSocket
-import org.apache.thrift.transport.TServerTransport
-import org.apache.thrift.transport.TServerSocket
-import org.apache.thrift.transport.TTransport
-import org.apache.thrift.transport.TTransportFactory
-import org.apache.thrift.transport.TTransportException
-import org.apache.thrift.server.THsHaServer
-import org.apache.thrift.server.TServer
-import org.apache.thrift.server.TThreadPoolServer
-import org.apache.thrift.protocol.TBinaryProtocol
+import org.apache.thrift.{TException, TProcessor, TProcessorFactory}
+import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol, TProtocolFactory}
+import org.apache.thrift.transport._
+import org.apache.thrift.server.{THsHaServer, TServer, TThreadPoolServer}
 import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
 import scala.tools.nsc.MainGenericRunner
@@ -26,10 +15,9 @@ import org.apache.zookeeper.ZooDefs.Ids
 import org.apache.zookeeper.data.{ACL, Id}
 import org.apache.zookeeper.CreateMode._
 import org.apache.zookeeper.KeeperException
+import scala.collection.mutable
 import scala.util.Sorting
 import java.net.InetAddress
-import scala.collection.mutable
-import com.twitter.service.snowflake.client.SnowflakeClient
 
 object SnowflakeServer {
   private val log = Logger.get
@@ -40,10 +28,9 @@ object SnowflakeServer {
   var PORT = -1
   lazy val zkPath = Configgy.config("zookeper_worker_id_path")
   lazy val zkWatcher = new FakeWatcher
-  lazy val zkClient = new ZookeeperClient(zkWatcher, Configgy.config.getString("zookeeper-client.hostlist", "localhost:2181"), Configgy.config)
-
-  //TODO: what array should be passed in here?
-  //val w3c = new W3CStats(Logger.get("w3c"), Array("ids_generated"))
+  lazy val hostlist = Configgy.config("zookeeper-client.hostlist")
+  log.info("Creating ZooKeeper client connected to %s", hostlist)
+  lazy val zkClient = new ZookeeperClient(zkWatcher, zkHostlist, Configgy.config)
 
   def shutdown(): Unit = {
     if (server != null) {
@@ -59,6 +46,7 @@ object SnowflakeServer {
     if (!Configgy.config("snowflake.skip_sanity_checks").toBoolean) {
       sanityCheckPeers()
     }
+
     loadWorkerId()
     val admin = new AdminService(Configgy.config, runtime)
 
@@ -85,7 +73,7 @@ object SnowflakeServer {
       server.serve()
     } catch {
       case e: Exception => {
-        log.error(e, "Unexpected exception: %s", e.getMessage)
+        log.error(e, "Unexpected exception while initializing server: %s", e.getMessage)
         throw e
       }
     }
@@ -106,9 +94,7 @@ object SnowflakeServer {
         log.info("successfully claimed workerId %d", id)
         workerId = id;
       } catch {
-        case e: KeeperException => {
-          log.info("workerId collision, retrying")
-        }
+        case e: KeeperException => log.info("workerId collision, retrying")
       }
     }
   }
@@ -136,18 +122,17 @@ object SnowflakeServer {
 
   def sanityCheckPeers() {
     var peerCount = 0L
-    var timestamps = peers().map { d =>
-      val (workerId, hostname) = d
+    val timestamps = peers().map { case (workerId: Int, hostname: String) =>
       try {
         var (t, c) = SnowflakeClient.create(hostname, PORT, 1000)
         val reportedWorkerId = c.get_worker_id().toLong
         if (reportedWorkerId != workerId) {
           log.error("Worker at %s has id %d in zookeeper, but via rpc it says %d", hostname, workerId, reportedWorkerId)
-          throw new Exception("Worker id insanity.")
+          throw new IllegalStateException("Worker id insanity.")
         }
         c.get_timestamp().toLong
       } catch {
-        case e: org.apache.thrift.transport.TTransportException => {
+        case e: TTransportException => {
           log.error("Couldn't talk to peer %s at %s", workerId, hostname)
           throw e
         }
@@ -159,14 +144,12 @@ object SnowflakeServer {
       if (Math.abs(System.currentTimeMillis - avg) > 10000) {
         log.error("Timestamp sanity check failed. Mean timestamp is %d, but mine is %d, " +
                   "so I'm more than 10s away from the mean", avg, System.currentTimeMillis)
-        throw new Exception("timestamp sanity check failed")
+        throw new IllegalStateException("timestamp sanity check failed")
       }
     }
   }
 
-  def getHostname(): String = {
-    return InetAddress.getLocalHost().getHostName()
-  }
+  def getHostname(): String = InetAddress.getLocalHost().getHostName()
 
   def findFirstAvailableId(children: Array[Int]): Int = {
     if (children.length > 1) {

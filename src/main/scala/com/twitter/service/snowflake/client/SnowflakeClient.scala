@@ -5,5 +5,5 @@ import com.twitter.service.snowflake.gen.Snowflake
 import net.lag.configgy.ConfigMap
 
 
-object SnowflakeClient extends ThriftClient
+object SnowflakeClient extends ThriftClient[Snowflake.Client]
 
