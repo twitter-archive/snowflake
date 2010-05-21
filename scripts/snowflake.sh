@@ -19,7 +19,7 @@ GC_OPTS="-XX:+UseConcMarkSweepGC -verbosegc -XX:+PrintGCDetails -XX:+PrintGCTime
 JAVA_OPTS="-server $GC_OPTS $HEAP_OPTS"
 JAVA_HOME=/usr/java/default
 
-pidfile="/var/run/$APP_NAME.pid"
+pidfile="/var/run/$APP_NAME/$APP_NAME.pid"
 daemon_args="--name $APP_NAME --pidfile $pidfile"
 daemon_start_args="--user $AS_USER --stdout=/var/log/$APP_NAME/stdout --stderr=/var/log/$APP_NAME/error"
 
