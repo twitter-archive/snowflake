@@ -14,7 +14,7 @@ MAIN_CLASS="com.twitter.service.snowflake.SnowflakeServer"
 AS_USER="snowflake"
 DAEMON="/usr/local/bin/daemon"
 
-HEAP_OPTS="-Xmx50000m -Xms50000m -XX:NewSize=512m"
+HEAP_OPTS="-Xmx4000m"
 GC_OPTS="-XX:+UseConcMarkSweepGC -verbosegc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -XX:+UseParNewGC -Xloggc:/var/log/snowflake/gc.log"
 JAVA_OPTS="-server $GC_OPTS $HEAP_OPTS"
 JAVA_HOME=/usr/java/default
@@ -62,7 +62,7 @@ case "$1" in
       exit 0
     fi
 
-    ulimit -n 8192 || echo -n " (no ulimit)"
+    ulimit -n 32768 || echo -n " (no ulimit)"
     $DAEMON $daemon_args $daemon_start_args -- ${JAVA_HOME}/bin/java ${JAVA_OPTS} -cp ${APP_HOME}/${MAIN_JAR} ${MAIN_CLASS} -f ${APP_HOME}/config/production.conf
     tries=0
     while ! running; do
