@@ -126,6 +126,7 @@ object SnowflakeServer {
     var peerCount = 0L
     val timestamps = peers().map { case (workerId: Int, hostname: String) =>
       try {
+        log.info("connecting to %s:%s".format(hostname, PORT))
         var (t, c) = SnowflakeClient.create(hostname, PORT, 1000)
         val reportedWorkerId = c.get_worker_id().toLong
         if (reportedWorkerId != workerId) {
