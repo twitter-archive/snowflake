@@ -1,19 +1,15 @@
 import sbt._
+import com.twitter.sbt._
 import Process._
 
 
-class SnowflakeProject(info: ProjectInfo) extends DefaultProject(info) {
+class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   // Maven repositories
-  val scalaToolsTesting = "testing.scala-tools.org" at "http://scala-tools.org/repo-releases/"
-  val powerMock = "powermock-api" at "http://powermock.googlecode.com/svn/repo/"
   val mavenDotOrg = "repo1" at "http://repo1.maven.org/maven2/"
-  val scalaToolsReleases = "scala-tools.org" at "http://scala-tools.org/repo-releases/"
-  val reucon = "reucon" at "http://maven.reucon.com/public/"
   val lagDotNet = "lag.net" at "http://www.lag.net/repo/"
-  val oauthDotNet = "oauth.net" at "http://oauth.googlecode.com/svn/code/maven"
-  val javaDotNet = "download.java.net" at "http://download.java.net/maven/2/"
   val jBoss = "jboss-repo" at "http://repository.jboss.org/maven2/"
   val nest = "nest" at "http://www.lag.net/nest/"
+  val twitter2 = "com.twitter" at "http://binaries.local.twitter.com/maven/"
 
   // library dependencies
   // note that JARs in lib/ are also pulled in, and so are not mentioned here
@@ -34,9 +30,11 @@ class SnowflakeProject(info: ProjectInfo) extends DefaultProject(info) {
   val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1"
   val asm = "asm" % "asm-all" % "2.2"
   val objenesis = "org.objenesis" % "objenesis" % "1.1"
-  val twitter = "com.twitter" % "json" % "1.1"
+  val json = "com.twitter" % "json" % "1.1"
   val sp = "org.scala-tools.testing" % "specs"  % "1.6.2"
   val javautils = "org.scala-tools" % "javautils" % "2.7.4-0.1"
+  val thrift = "thrift" % "libthrift" % "0.2.0"
+  val zookeeperClient = "com.twitter" % "zookeeper-client" % "1.1"
 
   def generatedThriftDirectoryPath = "src_managed" / "main"
   def thriftDirectoryPath = "src" / "main" / "thrift"
@@ -57,45 +55,4 @@ class SnowflakeProject(info: ProjectInfo) extends DefaultProject(info) {
   override def compileAction = super.compileAction dependsOn(thriftJava)
   override def compileOrder = CompileOrder.JavaThenScala
   override def mainClass = Some("com.twitter.service.snowflake.SnowflakeServer")
-
-  val managedSources = "src_managed" / "main"
-  val managedJavaPath = managedSources / "gen-java"
-  val managedResourcesPath = managedSources / "resources"
-  override def mainSourceRoots = super.mainSourceRoots +++ managedJavaPath
-  override def mainResources = super.mainResources +++ descendents(managedResourcesPath ##, "*")
-
-  /**
-   * Twitter specific packaging needs.
-   *
-   * In the classpath:
-   *  - all dependencies (via Ivy/Maven and in lib)
-   *  - package classes
-   * On the filesystem:
-   *  - scripts
-   *  - config
-   */
-  def distPath = (
-    // NOTE the double hashes (##) hoist the files in the preceeding directory
-    // to the top level - putting them in the "base directory" in sbt's terminology
-    ((outputPath ##) / defaultJarName) +++
-    mainResources +++
-    mainDependencies.scalaJars +++
-    descendents(info.projectPath, "*.sh") +++
-    descendents(info.projectPath, "*.awk") +++
-    descendents(info.projectPath, "*.rb") +++
-    descendents(info.projectPath, "*.conf") +++
-    descendents(info.projectPath / "lib" ##, "*.jar") +++
-    descendents(managedDependencyRootPath / "compile" ##, "*.jar")
-  )
-
-  // creates a sane classpath including all JARs and populates the manifest with it
-  override def manifestClassPath = Some(
-    distPath.getFiles
-    .filter(_.getName.endsWith(".jar"))
-    .map(_.getName).mkString(" ")
-  )
-
-  def distName = "snowflake-%s.zip".format(version)
-
-  lazy val zip = zipTask(distPath, "dist", distName) dependsOn (`package`) describedAs("Zips up the project.")
 }

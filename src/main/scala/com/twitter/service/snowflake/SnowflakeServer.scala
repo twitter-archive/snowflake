@@ -10,11 +10,12 @@ import org.apache.thrift.server.{THsHaServer, TServer, TThreadPoolServer}
 import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
 import scala.tools.nsc.MainGenericRunner
-import com.twitter.zookeeper.client._
+import com.twitter.zookeeper._
 import org.apache.zookeeper.ZooDefs.Ids
 import org.apache.zookeeper.data.{ACL, Id}
 import org.apache.zookeeper.CreateMode._
 import org.apache.zookeeper.KeeperException
+import org.apache.zookeeper.{CreateMode, Watcher, WatchedEvent}
 import scala.collection.mutable
 import scala.util.Sorting
 import java.net.InetAddress
@@ -29,11 +30,11 @@ object SnowflakeServer {
   val workers = new mutable.ListBuffer[IdWorker]()
   lazy val PORT = Configgy.config("snowflake.server_port").toInt
   lazy val zkPath = Configgy.config("zookeper_worker_id_path")
-  lazy val zkWatcher = new FakeWatcher
+  lazy val zkWatcher = new ZKWatch((a: WatchedEvent) => {})
   lazy val hostlist = Configgy.config("zookeeper-client.hostlist")
   lazy val zkClient = {
     log.info("Creating ZooKeeper client connected to %s", hostlist)
-    new ZookeeperClient(zkWatcher, hostlist, Configgy.config)
+    new ZooKeeperClient(Configgy.config, zkWatcher)
   }
 
   def shutdown(): Unit = {
@@ -93,7 +94,7 @@ object SnowflakeServer {
         val id = findFirstAvailableId(children)
 
         log.info("trying to claim workerId %d", id)
-        zkClient.create("%s/%s".format(zkPath, id), (getHostname + ':' + PORT).getBytes(), Ids.OPEN_ACL_UNSAFE, EPHEMERAL)
+        zkClient.create("%s/%s".format(zkPath, id), (getHostname + ':' + PORT).getBytes(), EPHEMERAL)
         log.info("successfully claimed workerId %d", id)
         workerId = id;
       } catch {
@@ -109,7 +110,7 @@ object SnowflakeServer {
     } catch {
       case _ => {
         log.info("%s missing, trying to create it", zkPath)
-        zkClient.create(zkPath, Array(), Ids.OPEN_ACL_UNSAFE, PERSISTENT)
+        zkClient.create(zkPath, Array(), PERSISTENT)
       }
     }
 
