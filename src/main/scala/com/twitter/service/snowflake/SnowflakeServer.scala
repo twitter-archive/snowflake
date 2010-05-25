@@ -19,6 +19,8 @@ import scala.collection.mutable
 import scala.util.Sorting
 import java.net.InetAddress
 
+case class Peer(hostname: String, port: Int)
+
 object SnowflakeServer {
   private val log = Logger.get
   val runtime = new RuntimeEnvironment(getClass)
@@ -91,7 +93,7 @@ object SnowflakeServer {
         val id = findFirstAvailableId(children)
 
         log.info("trying to claim workerId %d", id)
-        zkClient.create("%s/%s".format(zkPath, id), getHostname.getBytes(), Ids.OPEN_ACL_UNSAFE, EPHEMERAL)
+        zkClient.create("%s/%s".format(zkPath, id), (getHostname + ':' + PORT).getBytes(), Ids.OPEN_ACL_UNSAFE, EPHEMERAL)
         log.info("successfully claimed workerId %d", id)
         workerId = id;
       } catch {
@@ -100,8 +102,8 @@ object SnowflakeServer {
     }
   }
 
-  def peers(): mutable.HashMap[Int, String] = {
-    var peerMap = new mutable.HashMap[Int, String]
+  def peers(): mutable.HashMap[Int, Peer] = {
+    var peerMap = new mutable.HashMap[Int, Peer]
     try {
       zkClient.get(zkPath)
     } catch {
@@ -113,8 +115,9 @@ object SnowflakeServer {
 
     val children = zkClient.getChildren(zkPath)
     children.foreach { i =>
-      val hostname = zkClient.get("%s/%s".format(zkPath, i))
-      peerMap(i.toInt) = new String(hostname)
+      val peer = zkClient.get("%s/%s".format(zkPath, i))
+      val list = new String(peer).split(':')
+      peerMap(i.toInt) = new Peer(new String(list(0)), list(1).toInt)
     }
     log.info("found %s children".format(children.length))
 
@@ -123,20 +126,20 @@ object SnowflakeServer {
 
   def sanityCheckPeers() {
     var peerCount = 0L
-    val timestamps = peers().map { case (workerId: Int, hostname: String) =>
+    val timestamps = peers().map { case (workerId: Int, peer: Peer) =>
       try {
-        log.info("connecting to %s:%s".format(hostname, PORT))
-        var (t, c) = SnowflakeClient.create(hostname, PORT, 1000)
+        log.info("connecting to %s:%s".format(peer.hostname, peer.port))
+        var (t, c) = SnowflakeClient.create(peer.hostname, peer.port, 1000)
         val reportedWorkerId = c.get_worker_id().toLong
         if (reportedWorkerId != workerId) {
-          log.error("Worker at %s has id %d in zookeeper, but via rpc it says %d", hostname, workerId, reportedWorkerId)
+          log.error("Worker at %s:%s has id %d in zookeeper, but via rpc it says %d", peer.hostname, peer.port, workerId, reportedWorkerId)
           throw new IllegalStateException("Worker id insanity.")
         }
         peerCount = peerCount + 1
         c.get_timestamp().toLong
       } catch {
         case e: TTransportException => {
-          log.error("Couldn't talk to peer %s at %s", workerId, hostname)
+          log.error("Couldn't talk to peer %s at %s:%s", workerId, peer.hostname, peer.port)
           throw e
         }
       }
