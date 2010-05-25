@@ -11,7 +11,6 @@ MAIN_JAR="snowflake-1.0.jar"
 VERSION="1.0"
 APP_HOME="/usr/local/snowflake/current"
 MAIN_CLASS="com.twitter.service.snowflake.SnowflakeServer"
-AS_USER="snowflake"
 DAEMON="/usr/local/bin/daemon"
 
 HEAP_OPTS="-Xmx4000m"
@@ -21,7 +20,7 @@ JAVA_HOME=/usr/java/default
 
 pidfile="/var/run/$APP_NAME/$APP_NAME.pid"
 daemon_args="--name $APP_NAME --pidfile $pidfile"
-daemon_start_args="--user $AS_USER --stdout=/var/log/$APP_NAME/stdout --stderr=/var/log/$APP_NAME/error"
+daemon_start_args="--stdout=/var/log/$APP_NAME/stdout --stderr=/var/log/$APP_NAME/stderr"
 
 function running() {
   $DAEMON $daemon_args --running
@@ -62,7 +61,6 @@ case "$1" in
       exit 0
     fi
 
-    ulimit -n 32768 || echo -n " (no ulimit)"
     $DAEMON $daemon_args $daemon_start_args -- ${JAVA_HOME}/bin/java ${JAVA_OPTS} -cp ${APP_HOME}/${MAIN_JAR} ${MAIN_CLASS} -f ${APP_HOME}/config/production.conf
     tries=0
     while ! running; do
