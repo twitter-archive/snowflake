@@ -25,7 +25,7 @@ object SnowflakeServer {
   var server: TServer = null
   var workerId: Int = -1
   val workers = new mutable.ListBuffer[IdWorker]()
-  var PORT = -1
+  lazy var PORT = Configgy.config("snowflake.server_port").toInt
   lazy val zkPath = Configgy.config("zookeper_worker_id_path")
   lazy val zkWatcher = new FakeWatcher
   lazy val hostlist = Configgy.config("zookeeper-client.hostlist")
@@ -58,7 +58,6 @@ object SnowflakeServer {
     try {
       val worker = new IdWorker(workerId)
       workers += worker
-      PORT = Configgy.config("snowflake.server_port").toInt
       log.info("snowflake.server_port loaded: %s", PORT)
 
       val transport = new TNonblockingServerSocket(PORT)
