@@ -132,6 +132,7 @@ object SnowflakeServer {
           log.error("Worker at %s has id %d in zookeeper, but via rpc it says %d", hostname, workerId, reportedWorkerId)
           throw new IllegalStateException("Worker id insanity.")
         }
+        peerCount = peerCount + 1
         c.get_timestamp().toLong
       } catch {
         case e: TTransportException => {
