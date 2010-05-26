@@ -3,8 +3,8 @@
 # snowflake init.d script.
 #
 # Snowflake, and all new java services, require the same directory structure
-#   /usr/local/$APP_NAME should contain 'releases' directory and be able to create a symlink
-#   /var/log/$APP_NAME (chown daemon, chmod 775)
+#   /usr/local/snowflake should contain 'releases' directory and be able to create a symlink
+#   /var/log/snowlfake (chown daemon, chmod 775)
 
 APP_NAME="snowflake"
 MAIN_JAR="snowflake-1.0.jar"
