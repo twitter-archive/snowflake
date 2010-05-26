@@ -12,7 +12,7 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   val twitter2 = "com.twitter" at "http://binaries.local.twitter.com/maven/"
 
   // library dependencies
-  // note that JARs in lib/ are also pulled in, and so are not mentioned here
+  // note that JARs in libs/ are also pulled in, and so are not mentioned here
   val vscaladoc = "org.scala-tools" % "vscaladoc" % "1.1-md-3"
   val markdownj = "markdownj" % "markdownj" % "1.0.2b4-0.3.0"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.5.8"
