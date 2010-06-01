@@ -38,51 +38,9 @@ There are many otherwise reasonable solutions to this problem that require 128bi
 
 The id generation scheme should be at least as available as our related services (like our storage services).
 
-##  Proposed Solution
-* Thrift Server written in Scala 
+##  Solution
+* Thrift Server written in Scala
 * id is composed of:
   * time - 41 bits (millisecond precision w/ a custom epoch gives us 69 years)
   * configured machine id - 10 bits - gives us up to 1024 machines
   * sequence number - 12 bits - rolls over every 4096 per machine (with protection to avoid rollover in the same ms)
-
-
-
-
-
-
-Current logic for id generation:
-
-                             +-----------+
-                             |  lastTS   |
-                             |           |
-                             |    ==     |
-                             |           |
-                             |  currTS   |
-                             +-----------+
-                             /           \
-                            /             \
-                 YES       /               \     NO
-             +------------+                 +------------+
-             |   incr.    |                 |            |
-             |  sequence  |                 |   reset    |
-             |    and     |                 |  sequence  |
-             |  did seq.  |                 |   to 0     |
-             | roll over? |                 |            |
-             +------------+                 +------------+
-                 /    \                           |
-                /      \                          |
-       YES     /        \  NO                     |
-  +-------------+    +------------+               |
-  |  Busy wait  |    |            |               |
-  | til next ms |    |    Done.   |               |
-  |    and      |    |            |               |
-  |   reset     |    |            |               |
-  |   currTS    |    |            |               |
-  +-------------+    +------------+               |
-               \             \             +------------+
-                 \             \           |            |
-                   \             \         |  Compute   |
-                     \             \_______|    id      |
-                       \                   |            |
-                         \________________ |            |
-                                           +------------+
