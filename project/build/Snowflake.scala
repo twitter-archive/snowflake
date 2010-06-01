@@ -9,7 +9,6 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   val lagDotNet = "lag.net" at "http://www.lag.net/repo/"
   val jBoss = "jboss-repo" at "http://repository.jboss.org/maven2/"
   val nest = "nest" at "http://www.lag.net/nest/"
-  val twitter2 = "com.twitter" at "http://binaries.local.twitter.com/maven/"
 
   // library dependencies
   // note that JARs in libs/ are also pulled in, and so are not mentioned here
