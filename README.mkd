@@ -24,7 +24,7 @@ We have a number of API resources that assume an ordering (they let you look thi
 
 However, as a result of a large number of asynchronous operations, we already don't guarantee in-order delivery.
 
-We can, however, that the id numbers will be k-sorted (references: http://portal.acm.org/citation.cfm?id=70413.70419 and http://portal.acm.org/citation.cfm?id=110778.110783) within a reasonable bound (we're promising 1s, but shooting for 10's of ms).
+We can guarantee, however, that the id numbers will be k-sorted (references: http://portal.acm.org/citation.cfm?id=70413.70419 and http://portal.acm.org/citation.cfm?id=110778.110783) within a reasonable bound (we're promising 1s, but shooting for 10's of ms).
 
 ### Directly Sortable
 
