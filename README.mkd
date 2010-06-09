@@ -11,7 +11,7 @@ As we at Twitter move away from Mysql towards Cassandra, we've needed a new way 
 ## Requirements
 
 ### Performance
- * minimum 10k ids per process
+ * minimum 10k ids per second per process
  * response rate 2ms (plus network latency)
 
 ### Uncoordinated
@@ -44,3 +44,7 @@ The id generation scheme should be at least as available as our related services
   * time - 41 bits (millisecond precision w/ a custom epoch gives us 69 years)
   * configured machine id - 10 bits - gives us up to 1024 machines
   * sequence number - 12 bits - rolls over every 4096 per machine (with protection to avoid rollover in the same ms)
+
+### System Clock Dependency
+
+You should use NTP to keep your system clock accurate.  Snowflake protects from non-monotonic clocks, i.e. clocks that run backwards.  If your clock is running fast and NTP tells it to repeat a few milliseconds, snowflake will refuse to generate ids until a time that is after the last time we generated an id.
