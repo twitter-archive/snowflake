@@ -2,6 +2,10 @@
 namespace java com.twitter.service.snowflake.gen
 namespace ruby Twitter.Snowflake
 
+exception InvalidSystemClock {
+  1: string message,
+}
+
 exception InvalidUserAgentError {
   1: string message,
 }
