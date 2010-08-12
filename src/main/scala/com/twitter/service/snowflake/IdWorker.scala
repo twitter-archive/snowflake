@@ -55,6 +55,11 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
   def nextId(): Long = synchronized {
     var timestamp = timeGen()
 
+    if (lastTimestamp > timestamp) { 
+        log.warning("clock is moving backwards.  Rejecting requests until %d.", lastTimestamp);
+        throw new InvalidSystemClock("Clock moved backwards.  Refusing to generate id for %d milliseconds".format(lastTimestamp - timestamp));
+    }
+
     if (lastTimestamp == timestamp) {
       sequence = (sequence + 1) & sequenceMask
       if (sequence == 0) {
