@@ -54,4 +54,5 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   override def compileAction = super.compileAction dependsOn(thriftJava)
   override def compileOrder = CompileOrder.JavaThenScala
   override def mainClass = Some("com.twitter.service.snowflake.SnowflakeServer")
+  override def releaseBuild = true
 }
