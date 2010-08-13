@@ -68,8 +68,8 @@ object SnowflakeServer {
       val protoFactory = new TBinaryProtocol.Factory(true, true)
 
       val serverOpts = new THsHaServer.Options
-      serverOpts.minWorkerThreads = Configgy.config.getInt("snowflake.thrift-server-threads-min", 200)
-      serverOpts.maxWorkerThreads = Configgy.config.getInt("snowflake.thrift-server-threads-max", 800)
+      serverOpts.minWorkerThreads = Configgy.config("snowflake.thrift-server-threads-min").toInt
+      serverOpts.maxWorkerThreads = Configgy.config("snowflake.thrift-server-threads-max").toInt
 
       val server = new THsHaServer(processor, transport, serverOpts)
 
