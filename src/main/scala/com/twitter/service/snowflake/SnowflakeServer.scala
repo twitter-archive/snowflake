@@ -59,7 +59,7 @@ object SnowflakeServer {
     Thread.sleep(Configgy.config("snowflake.startup_sleep_ms").toLong)
 
     try {
-      val worker = new IdWorker(workerId)
+      val worker = new IdWorker(workerId, 0) // TODO
       workers += worker
       log.info("snowflake.server_port loaded: %s", PORT)
 

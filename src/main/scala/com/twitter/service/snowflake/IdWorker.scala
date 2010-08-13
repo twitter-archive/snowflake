@@ -12,7 +12,7 @@ import net.lag.logging.Logger
  * we ever want to support multiple worker threads
  * per process
  */
-class IdWorker(workerId: Long) extends Snowflake.Iface {
+class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
   private val log = Logger.get
   private val idLog = new W3CReporter(Logger.get("w3c"))
   val genCounter = Stats.getCounter("ids_generated")
@@ -21,18 +21,25 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
   val twepoch = 1142974214000L
 
   var sequence = 0L
-  val workerIdBits = 10
+  val workerIdBits = 5
+  val datacenterIdBits = 5
   val maxWorkerId = -1L ^ (-1L << workerIdBits)
+  val maxDatacenterId = -1L ^ (-1L << datacenterIdBits)
   val sequenceBits = 12
 
-  val timestampLeftShift = sequenceBits + workerIdBits
   val workerIdShift = sequenceBits
+  val datacenterIdShift = sequenceBits + workerIdBits
+  val timestampLeftShift = sequenceBits + workerIdBits + datacenterIdBits
   val sequenceMask = -1L ^ (-1L << sequenceBits)
 
   var lastTimestamp = -1L
 
   // sanity check for workerId
   if (workerId > maxWorkerId || workerId < 0) {
+    throw new IllegalArgumentException("worker Id can't be greater than %d or less than 0".format(maxWorkerId))
+  }
+
+  if (datacenterId > maxDatacenterId || datacenterId < 0) {
     throw new IllegalArgumentException("worker Id can't be greater than %d or less than 0".format(maxWorkerId))
   }
 
@@ -50,12 +57,13 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
   }
 
   def get_worker_id(): Long = workerId
+  def get_datacenter_id(): Long = datacenterId
   def get_timestamp() = System.currentTimeMillis
 
   def nextId(): Long = synchronized {
     var timestamp = timeGen()
 
-    if (lastTimestamp > timestamp) { 
+    if (lastTimestamp > timestamp) {
         log.warning("clock is moving backwards.  Rejecting requests until %d.", lastTimestamp);
         throw new InvalidSystemClock("Clock moved backwards.  Refusing to generate id for %d milliseconds".format(lastTimestamp - timestamp));
     }
@@ -72,7 +80,9 @@ class IdWorker(workerId: Long) extends Snowflake.Iface {
     lastTimestamp = timestamp
     genCounter.incr()
     ((timestamp - twepoch) << timestampLeftShift) |
-      (workerId << workerIdShift) | sequence
+      (datacenterId << datacenterIdShift) |
+      (workerId << workerIdShift) | 
+      sequence
   }
 
   def tilNextMillis(lastTimestamp: Long): Long = {
