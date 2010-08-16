@@ -147,16 +147,10 @@ class IdWorkerSpec extends Specification {
       worker.validUseragent("infra-dm") must be_==(true);
     }
 
-    "reject numbers" in {
+    "reject leading numbers" in {
       val worker = new IdWorker(1, 1)
       worker.validUseragent("1") must be_==(false)
-      worker.validUseragent("1-2") must be_==(false)
+      worker.validUseragent("1asdf") must be_==(false)
     }
-
-    "reject missing product name" in {
-      val worker = new IdWorker(1, 1)
-      worker.validUseragent("infra") must be_==(false)
-    }
-
   }
 }

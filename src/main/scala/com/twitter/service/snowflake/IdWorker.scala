@@ -95,10 +95,10 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
 
   def timeGen(): Long = System.currentTimeMillis()
 
-  val AgentParser = """([a-zA-Z]*)\-([a-zA-Z]*)""".r
+  val AgentParser = """([a-zA-Z][a-zA-Z\-0-9]*)""".r
 
   def validUseragent(useragent: String): Boolean = useragent match {
-    case AgentParser(thing, subthing) => true
+    case AgentParser(_) => true
     case _ => false
   }
 }
