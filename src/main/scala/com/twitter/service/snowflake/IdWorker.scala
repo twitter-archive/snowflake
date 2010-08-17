@@ -43,8 +43,8 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
     throw new IllegalArgumentException("worker Id can't be greater than %d or less than 0".format(maxWorkerId))
   }
 
-  log.info("worker starting. timestamp left shift %d, worker id bits %d, sequence bits %d, workid %d",
-    timestampLeftShift, workerIdBits, sequenceBits, workerId)
+  log.info("worker starting. timestamp left shift %d, datacenter id bits %d, worker id bits %d, sequence bits %d, workerid %d",
+    timestampLeftShift, datacenterIdBits, workerIdBits, sequenceBits, workerId)
 
   def get_id(useragent: String): Long = {
     if (!validUseragent(useragent)) {
