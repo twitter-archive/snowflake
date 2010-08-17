@@ -26,10 +26,12 @@ object SnowflakeServer {
   private val log = Logger.get
   val runtime = new RuntimeEnvironment(getClass)
   var server: TServer = null
+  var datacenterId: Int = -1
+  lazy val datacenterIdPath: String = Configgy.config("snowflake.datacenter_id_path")
   var workerId: Int = -1
   val workers = new mutable.ListBuffer[IdWorker]()
   lazy val PORT = Configgy.config("snowflake.server_port").toInt
-  lazy val zkPath = Configgy.config("zookeper_worker_id_path")
+  lazy val zkPath = Configgy.config("snowflake.worker_id_path")
   lazy val zkWatcher = new ZKWatch((a: WatchedEvent) => {})
   lazy val hostlist = Configgy.config("zookeeper-client.hostlist")
   lazy val zkClient = {
@@ -52,14 +54,14 @@ object SnowflakeServer {
       sanityCheckPeers()
     }
 
+    loadDatacenterId()
     loadWorkerId()
     val admin = new AdminService(Configgy.config, runtime)
 
-    // TODO we should sleep for at least as long as our time-drift SLA
     Thread.sleep(Configgy.config("snowflake.startup_sleep_ms").toLong)
 
     try {
-      val worker = new IdWorker(workerId, 0) // TODO
+      val worker = new IdWorker(workerId, datacenterId)
       workers += worker
       log.info("snowflake.server_port loaded: %s", PORT)
 
@@ -78,6 +80,13 @@ object SnowflakeServer {
         log.error(e, "Unexpected exception while initializing server: %s", e.getMessage)
         throw e
       }
+    }
+  }
+
+  def loadDatacenterId() {
+    datacenterId = Configgy.config("snowflake.datacenter_id", -1)
+    if (datacenterId < 0) {
+      datacenterId = (new String(zkClient.get(datacenterIdPath))).toInt
     }
   }
 
