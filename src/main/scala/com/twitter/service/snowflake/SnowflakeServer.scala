@@ -55,7 +55,7 @@ object SnowflakeServer {
     }
 
     loadDatacenterId()
-    loadWorkerId()
+    workerId = loadWorkerId()
     val admin = new AdminService(Configgy.config, runtime)
 
     Thread.sleep(Configgy.config("snowflake.startup_sleep_ms").toLong)
@@ -90,24 +90,24 @@ object SnowflakeServer {
     }
   }
 
-  def loadWorkerId() {
-    workerId = Configgy.config("worker_id", -1)
+  def loadWorkerId(): Int = {
+    val id = Configgy.config("worker_id", -1)
 
-    while (workerId < 0) {
+    if (id > 0) {
+      return id
+    }
+
+    for (i <- 0 until 31) {
       try {
-        val p = peers()
-        val children = p.keys.collect.toArray
-        Sorting.quickSort(children)
-        val id = findFirstAvailableId(children)
-
-        log.info("trying to claim workerId %d", id)
-        zkClient.create("%s/%s".format(zkPath, id), (getHostname + ':' + PORT).getBytes(), EPHEMERAL)
-        log.info("successfully claimed workerId %d", id)
-        workerId = id;
+        log.info("trying to claim workerId %d", i)
+        zkClient.create("%s/%s".format(zkPath, i), (getHostname + ':' + PORT).getBytes(), EPHEMERAL)
+        log.info("successfully claimed workerId %d", i)
+        return i
       } catch {
         case e: KeeperException => log.info("workerId collision, retrying")
       }
     }
+    return -1
   }
 
   def peers(): mutable.HashMap[Int, Peer] = {
@@ -165,18 +165,4 @@ object SnowflakeServer {
 
   def getHostname(): String = InetAddress.getLocalHost().getHostName()
 
-  def findFirstAvailableId(children: Array[Int]): Int = {
-    if (children.length > 1) {
-      for (i <- 1 until children.length) {
-        if (children(i) > (children(i - 1) + 1)) {
-          return children(i-1) + 1
-        }
-      }
-      return children.last + 1
-    } else if (children.length == 1 && children.first == 0) {
-      1
-    } else {
-      0
-    }
-  }
 }
