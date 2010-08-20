@@ -19,7 +19,7 @@ $ganglia_prefix = ''
 $stat_timeout = 86400
 
 hostname = "localhost"
-port = 9989
+port = 7610
 use_web = false
 
 def usage(port)
@@ -57,7 +57,7 @@ opts.each do |opt, arg|
   when '-P'
     $ganglia_prefix = arg
   when '-w'
-    port = 9990
+    port = 7610 # TODO: read from config file
     use_web = true
   end
 end
