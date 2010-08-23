@@ -6,18 +6,15 @@ import com.twitter.service.snowflake.gen._
 import org.apache.thrift.{TException, TProcessor, TProcessorFactory}
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol, TProtocolFactory}
 import org.apache.thrift.transport._
-import org.apache.thrift.server.{THsHaServer, TServer, TThreadPoolServer}
+import org.apache.thrift.server.{THsHaServer, TServer}
 import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
-import scala.tools.nsc.MainGenericRunner
-import com.twitter.zookeeper._
+import com.twitter.zookeeper.{ZooKeeperClient, ZKWatch}
 import org.apache.zookeeper.ZooDefs.Ids
 import org.apache.zookeeper.data.{ACL, Id}
 import org.apache.zookeeper.CreateMode._
-import org.apache.zookeeper.KeeperException
-import org.apache.zookeeper.{CreateMode, Watcher, WatchedEvent}
+import org.apache.zookeeper.{KeeperException, CreateMode, Watcher, WatchedEvent}
 import scala.collection.mutable
-import scala.util.Sorting
 import java.net.InetAddress
 
 case class Peer(hostname: String, port: Int)
@@ -27,15 +24,14 @@ object SnowflakeServer {
   val runtime = new RuntimeEnvironment(getClass)
   var server: TServer = null
   var datacenterId: Int = -1
-  lazy val datacenterIdPath: String = Configgy.config("snowflake.datacenter_id_path")
   var workerId: Int = -1
-  val workers = new mutable.ListBuffer[IdWorker]()
-  lazy val PORT = Configgy.config("snowflake.server_port").toInt
-  lazy val zkPath = Configgy.config("snowflake.worker_id_path")
-  lazy val zkWatcher = new ZKWatch((a: WatchedEvent) => {})
-  lazy val hostlist = Configgy.config("zookeeper-client.hostlist")
+  lazy val port = Configgy.config("snowflake.server_port").toInt
+  lazy val datacenterIdZkPath: String = Configgy.config("snowflake.datacenter_id_path")
+  lazy val workerIdZkPath = Configgy.config("snowflake.worker_id_path")
+  lazy val zkWatcher = new ZKWatch((a: WatchedEvent) => {}) // TODO: get rid of this after upgrading to the new client
+  lazy val zkHostlist = Configgy.config("zookeeper-client.hostlist")
   lazy val zkClient = {
-    log.info("Creating ZooKeeper client connected to %s", hostlist)
+    log.info("Creating ZooKeeper client connected to %s", zkHostlist)
     new ZooKeeperClient(Configgy.config, zkWatcher)
   }
 
@@ -62,18 +58,17 @@ object SnowflakeServer {
 
     try {
       val worker = new IdWorker(workerId, datacenterId)
-      workers += worker
-      log.info("snowflake.server_port loaded: %s", PORT)
+      log.info("snowflake.server_port loaded: %s", port)
 
       val processor = new Snowflake.Processor(worker)
-      val transport = new TNonblockingServerSocket(PORT)
+      val transport = new TNonblockingServerSocket(port)
       val serverOpts = new THsHaServer.Options
       serverOpts.minWorkerThreads = Configgy.config("snowflake.thrift-server-threads-min").toInt
       serverOpts.maxWorkerThreads = Configgy.config("snowflake.thrift-server-threads-max").toInt
 
       val server = new THsHaServer(processor, transport, serverOpts)
 
-      log.info("Starting server on port %s with minWorkerThreads=%s and maxWorkerThreads=%s", PORT, serverOpts.minWorkerThreads, serverOpts.maxWorkerThreads)
+      log.info("Starting server on port %s with minWorkerThreads=%s and maxWorkerThreads=%s", port, serverOpts.minWorkerThreads, serverOpts.maxWorkerThreads)
       server.serve()
     } catch {
       case e: Exception => {
@@ -86,7 +81,7 @@ object SnowflakeServer {
   def loadDatacenterId() {
     datacenterId = Configgy.config("snowflake.datacenter_id", -1)
     if (datacenterId < 0) {
-      datacenterId = (new String(zkClient.get(datacenterIdPath))).toInt
+      datacenterId = (new String(zkClient.get(datacenterIdZkPath))).toInt
     }
   }
 
@@ -100,7 +95,7 @@ object SnowflakeServer {
     for (i <- 0 until 31) {
       try {
         log.info("trying to claim workerId %d", i)
-        zkClient.create("%s/%s".format(zkPath, i), (getHostname + ':' + PORT).getBytes(), EPHEMERAL)
+        zkClient.create("%s/%s".format(workerIdZkPath, i), (getHostname + ':' + port).getBytes(), EPHEMERAL)
         log.info("successfully claimed workerId %d", i)
         return i
       } catch {
@@ -113,17 +108,17 @@ object SnowflakeServer {
   def peers(): mutable.HashMap[Int, Peer] = {
     var peerMap = new mutable.HashMap[Int, Peer]
     try {
-      zkClient.get(zkPath)
+      zkClient.get(workerIdZkPath)
     } catch {
       case _ => {
-        log.info("%s missing, trying to create it", zkPath)
-        zkClient.create(zkPath, Array(), PERSISTENT)
+        log.info("%s missing, trying to create it", workerIdZkPath)
+        zkClient.create(workerIdZkPath, Array(), PERSISTENT)
       }
     }
 
-    val children = zkClient.getChildren(zkPath)
+    val children = zkClient.getChildren(workerIdZkPath)
     children.foreach { i =>
-      val peer = zkClient.get("%s/%s".format(zkPath, i))
+      val peer = zkClient.get("%s/%s".format(workerIdZkPath, i))
       val list = new String(peer).split(':')
       peerMap(i.toInt) = new Peer(new String(list(0)), list(1).toInt)
     }
@@ -133,12 +128,12 @@ object SnowflakeServer {
   }
 
   def sanityCheckPeers() {
-    var peerCount = 0L
+    var peerCount = 0
     val timestamps = peers().map { case (workerId: Int, peer: Peer) =>
       try {
         log.info("connecting to %s:%s".format(peer.hostname, peer.port))
         var (t, c) = SnowflakeClient.create(peer.hostname, peer.port, 1000)
-        val reportedWorkerId = c.get_worker_id().toLong
+        val reportedWorkerId = c.get_worker_id()
         if (reportedWorkerId != workerId) {
           log.error("Worker at %s:%s has id %d in zookeeper, but via rpc it says %d", peer.hostname, peer.port, workerId, reportedWorkerId)
           throw new IllegalStateException("Worker id insanity.")
@@ -153,7 +148,7 @@ object SnowflakeServer {
       }
     }
 
-    if (timestamps.toSeq.size > 0) { // only run if peers exist
+    if (timestamps.toSeq.size > 0) {
       val avg = timestamps.foldLeft(0L)(_ + _) / peerCount
       if (Math.abs(System.currentTimeMillis - avg) > 10000) {
         log.error("Timestamp sanity check failed. Mean timestamp is %d, but mine is %d, " +
