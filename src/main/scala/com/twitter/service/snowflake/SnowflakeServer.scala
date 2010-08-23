@@ -46,11 +46,11 @@ object SnowflakeServer {
   def main(args: Array[String]) {
     runtime.load(args)
 
+    loadDatacenterId()
     if (!Configgy.config("snowflake.skip_sanity_checks").toBoolean) {
       sanityCheckPeers()
     }
 
-    loadDatacenterId()
     workerId = loadWorkerId()
     val admin = new AdminService(Configgy.config, runtime)
 
@@ -129,15 +129,22 @@ object SnowflakeServer {
 
   def sanityCheckPeers() {
     var peerCount = 0
-    val timestamps = peers().map { case (workerId: Int, peer: Peer) =>
+    val timestamps = peers().map { case (id: Int, peer: Peer) =>
       try {
         log.info("connecting to %s:%s".format(peer.hostname, peer.port))
         var (t, c) = SnowflakeClient.create(peer.hostname, peer.port, 1000)
         val reportedWorkerId = c.get_worker_id()
-        if (reportedWorkerId != workerId) {
-          log.error("Worker at %s:%s has id %d in zookeeper, but via rpc it says %d", peer.hostname, peer.port, workerId, reportedWorkerId)
+        if (reportedWorkerId != id) {
+          log.error("Worker at %s:%s has id %d in zookeeper, but via rpc it says %d", peer.hostname, peer.port, id, reportedWorkerId)
           throw new IllegalStateException("Worker id insanity.")
         }
+
+        val reportedDatacenterId = c.get_datacenter_id()
+        if (reportedDatacenterId != datacenterId) {
+          log.error("Worker at %s:%s has datacenter_id %d, but ours is %d", peer.hostname, peer.port, reportedDatacenterId, datacenterId)
+          throw new IllegalStateException("Worker id insanity.")
+        }
+
         peerCount = peerCount + 1
         c.get_timestamp().toLong
       } catch {
