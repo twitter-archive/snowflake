@@ -9,7 +9,7 @@ import org.apache.thrift.transport._
 import org.apache.thrift.server.{THsHaServer, TServer}
 import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
-import com.twitter.zookeeper.{ZooKeeperClient, ZKWatch}
+import com.twitter.zookeeper.ZooKeeperClient
 import org.apache.zookeeper.ZooDefs.Ids
 import org.apache.zookeeper.data.{ACL, Id}
 import org.apache.zookeeper.CreateMode._
@@ -28,11 +28,10 @@ object SnowflakeServer {
   lazy val port = Configgy.config("snowflake.server_port").toInt
   lazy val datacenterIdZkPath: String = Configgy.config("snowflake.datacenter_id_path")
   lazy val workerIdZkPath = Configgy.config("snowflake.worker_id_path")
-  lazy val zkWatcher = new ZKWatch((a: WatchedEvent) => {}) // TODO: get rid of this after upgrading to the new client
-  lazy val zkHostlist = Configgy.config("zookeeper-client.hostlist")
+  lazy val zkHostlist = Configgy.config("zookeeper-client.hostlist").toString
   lazy val zkClient = {
     log.info("Creating ZooKeeper client connected to %s", zkHostlist)
-    new ZooKeeperClient(Configgy.config, zkWatcher)
+    new ZooKeeperClient(zkHostlist)
   }
 
   def shutdown(): Unit = {

@@ -33,7 +33,7 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   val sp = "org.scala-tools.testing" % "specs"  % "1.6.2.2"
   val javautils = "org.scala-tools" % "javautils" % "2.7.4-0.1"
   val thrift = "thrift" % "libthrift" % "0.2.0"
-  val zookeeperClient = "com.twitter" % "zookeeper-client" % "1.1"
+  val zookeeperClient = "com.twitter" % "zookeeper-client" % "1.5"
 
   def generatedThriftDirectoryPath = "src_managed" / "main"
   def thriftDirectoryPath = "src" / "main" / "thrift"
