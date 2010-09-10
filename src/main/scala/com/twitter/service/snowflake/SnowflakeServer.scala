@@ -24,7 +24,7 @@ object SnowflakeServer {
   val runtime = new RuntimeEnvironment(getClass)
   var server: TServer = null
   var datacenterId: Int = -1
-  var workerId: Int = -1
+  lazy val workerId: Int = Configgy.config("snowflake.worker_id").toInt
   lazy val port = Configgy.config("snowflake.server_port").toInt
   lazy val datacenterIdZkPath: String = Configgy.config("snowflake.datacenter_id_path")
   lazy val workerIdZkPath = Configgy.config("snowflake.worker_id_path")
@@ -45,12 +45,12 @@ object SnowflakeServer {
   def main(args: Array[String]) {
     runtime.load(args)
 
-    loadDatacenterId()
+    datacenterId = Configgy.config("snowflake.datacenter_id", -1)
     if (!Configgy.config("snowflake.skip_sanity_checks").toBoolean) {
       sanityCheckPeers()
     }
 
-    workerId = loadWorkerId()
+    registerWorkerId(workerId)
     val admin = new AdminService(Configgy.config, runtime)
 
     Thread.sleep(Configgy.config("snowflake.startup_sleep_ms").toLong)
@@ -77,31 +77,10 @@ object SnowflakeServer {
     }
   }
 
-  def loadDatacenterId() {
-    datacenterId = Configgy.config("snowflake.datacenter_id", -1)
-    if (datacenterId < 0) {
-      datacenterId = (new String(zkClient.get(datacenterIdZkPath))).toInt
-    }
-  }
-
-  def loadWorkerId(): Int = {
-    val id = Configgy.config("worker_id", -1)
-
-    if (id > 0) {
-      return id
-    }
-
-    for (i <- 0 until 31) {
-      try {
-        log.info("trying to claim workerId %d", i)
-        zkClient.create("%s/%s".format(workerIdZkPath, i), (getHostname + ':' + port).getBytes(), EPHEMERAL)
-        log.info("successfully claimed workerId %d", i)
-        return i
-      } catch {
-        case e: KeeperException => log.info("workerId collision, retrying")
-      }
-    }
-    return -1
+  def registerWorkerId(i: Int) = {
+    log.info("trying to claim workerId %d", i)
+    zkClient.create("%s/%s".format(workerIdZkPath, i), (getHostname + ':' + port).getBytes(), EPHEMERAL)
+    log.info("successfully claimed workerId %d", i)
   }
 
   def peers(): mutable.HashMap[Int, Peer] = {
@@ -141,7 +120,7 @@ object SnowflakeServer {
         val reportedDatacenterId = c.get_datacenter_id()
         if (reportedDatacenterId != datacenterId) {
           log.error("Worker at %s:%s has datacenter_id %d, but ours is %d", peer.hostname, peer.port, reportedDatacenterId, datacenterId)
-          throw new IllegalStateException("Worker id insanity.")
+          throw new IllegalStateException("Datacenter id insanity.")
         }
 
         peerCount = peerCount + 1

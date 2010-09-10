@@ -3,6 +3,10 @@ require 'rubygems'
 require 'thrift_client'
 require 'snowflake'
 
+if ARGV.length < 3
+  puts "client_test.rb <count> <servers> <agent>"
+  exit
+end
 count   = ARGV.shift.to_i
 servers = ARGV.shift
 agent   = ARGV.shift
