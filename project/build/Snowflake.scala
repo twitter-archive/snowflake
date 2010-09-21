@@ -55,4 +55,13 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   override def compileOrder = CompileOrder.JavaThenScala
   override def mainClass = Some("com.twitter.service.snowflake.SnowflakeServer")
   override def releaseBuild = true
+
+  override def pomExtra =
+    <licenses>
+      <license>
+        <name>Apache 2</name>
+        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        <distribution>repo</distribution>
+      </license>
+    </licenses>
 }
