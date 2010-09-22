@@ -6,9 +6,7 @@ import Process._
 class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   // Maven repositories
   val mavenDotOrg = "repo1" at "http://repo1.maven.org/maven2/"
-  val lagDotNet = "lag.net" at "http://www.lag.net/repo/"
   val jBoss = "jboss-repo" at "http://repository.jboss.org/maven2/"
-  val nest = "nest" at "http://www.lag.net/nest/"
 
   // library dependencies
   // note that JARs in libs/ are also pulled in, and so are not mentioned here
