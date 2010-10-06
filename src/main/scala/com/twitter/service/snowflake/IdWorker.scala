@@ -40,7 +40,7 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
   }
 
   if (datacenterId > maxDatacenterId || datacenterId < 0) {
-    throw new IllegalArgumentException("worker Id can't be greater than %d or less than 0".format(maxWorkerId))
+    throw new IllegalArgumentException("datacenter Id can't be greater than %d or less than 0".format(maxWorkerId))
   }
 
   log.info("worker starting. timestamp left shift %d, datacenter id bits %d, worker id bits %d, sequence bits %d, workerid %d",
