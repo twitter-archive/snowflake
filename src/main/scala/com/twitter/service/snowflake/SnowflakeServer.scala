@@ -23,10 +23,9 @@ object SnowflakeServer {
   private val log = Logger.get
   val runtime = new RuntimeEnvironment(getClass)
   var server: TServer = null
-  var datacenterId: Int = -1
+  val datacenterId = Configgy.config("snowflake.datacenter_id").toInt
   lazy val workerId: Int = Configgy.config("snowflake.worker_id").toInt
   lazy val port = Configgy.config("snowflake.server_port").toInt
-  lazy val datacenterIdZkPath: String = Configgy.config("snowflake.datacenter_id_path")
   lazy val workerIdZkPath = Configgy.config("snowflake.worker_id_path")
   lazy val zkHostlist = Configgy.config("zookeeper-client.hostlist").toString
   lazy val zkClient = {
@@ -45,7 +44,6 @@ object SnowflakeServer {
   def main(args: Array[String]) {
     runtime.load(args)
 
-    datacenterId = Configgy.config("snowflake.datacenter_id", -1)
     if (!Configgy.config("snowflake.skip_sanity_checks").toBoolean) {
       sanityCheckPeers()
     }
