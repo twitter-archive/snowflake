@@ -23,7 +23,7 @@ object SnowflakeServer {
   private val log = Logger.get
   val runtime = new RuntimeEnvironment(getClass)
   var server: TServer = null
-  val datacenterId = Configgy.config("snowflake.datacenter_id").toInt
+  lazy val datacenterId = Configgy.config("snowflake.datacenter_id").toInt
   lazy val workerId: Int = Configgy.config("snowflake.worker_id").toInt
   lazy val port = Configgy.config("snowflake.server_port").toInt
   lazy val workerIdZkPath = Configgy.config("snowflake.worker_id_path")
