@@ -14,6 +14,7 @@ import org.apache.zookeeper.ZooDefs.Ids
 import org.apache.zookeeper.data.{ACL, Id}
 import org.apache.zookeeper.CreateMode._
 import org.apache.zookeeper.{KeeperException, CreateMode, Watcher, WatchedEvent}
+import org.apache.zookeeper.KeeperException.NodeExistsException
 import scala.collection.mutable
 import java.net.InetAddress
 
@@ -75,10 +76,22 @@ object SnowflakeServer {
     }
   }
 
-  def registerWorkerId(i: Int) = {
+  def registerWorkerId(i: Int):Unit = {
     log.info("trying to claim workerId %d", i)
-    zkClient.create("%s/%s".format(workerIdZkPath, i), (getHostname + ':' + port).getBytes(), EPHEMERAL)
-    log.info("successfully claimed workerId %d", i)
+    var tries = 0
+    while (tries < 2) {
+      try {
+        zkClient.create("%s/%s".format(workerIdZkPath, i), (getHostname + ':' + port).getBytes(), EPHEMERAL)
+        return
+      } catch {
+        case e: NodeExistsException => {
+          log.info("Failed to claim worker id. Gonna wait a bit and retry because the node may be from the last time I was running.")
+          tries += 1
+          Thread.sleep(30000)
+        }
+      }
+      log.info("successfully claimed workerId %d", i)
+    }
   }
 
   def peers(): mutable.HashMap[Int, Peer] = {
@@ -105,7 +118,9 @@ object SnowflakeServer {
 
   def sanityCheckPeers() {
     var peerCount = 0
-    val timestamps = peers().map { case (id: Int, peer: Peer) =>
+    val timestamps = peers().filter{ case (id: Int, peer: Peer) =>
+      !(peer.hostname == getHostname && peer.port == port)
+    }.map { case (id: Int, peer: Peer) =>
       try {
         log.info("connecting to %s:%s".format(peer.hostname, peer.port))
         var (t, c) = SnowflakeClient.create(peer.hostname, peer.port, 1000)
