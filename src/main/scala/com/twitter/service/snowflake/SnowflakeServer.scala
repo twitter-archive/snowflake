@@ -79,15 +79,19 @@ object SnowflakeServer {
   def registerWorkerId(i: Int):Unit = {
     log.info("trying to claim workerId %d", i)
     var tries = 0
-    while (tries < 2) {
+    while (true) {
       try {
         zkClient.create("%s/%s".format(workerIdZkPath, i), (getHostname + ':' + port).getBytes(), EPHEMERAL)
         return
       } catch {
         case e: NodeExistsException => {
-          log.info("Failed to claim worker id. Gonna wait a bit and retry because the node may be from the last time I was running.")
-          tries += 1
-          Thread.sleep(30000)
+          if (tries < 2) {
+            log.info("Failed to claim worker id. Gonna wait a bit and retry because the node may be from the last time I was running.")
+            tries += 1
+            Thread.sleep(30000)
+          } else {
+            throw e
+          }
         }
       }
       log.info("successfully claimed workerId %d", i)
