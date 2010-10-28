@@ -18,5 +18,7 @@ service Snowflake {
 }
 
 struct AuditLogEntry {
-  1: i64 id
+  1: i64 id,
+  2: string useragent,
+  3: i64 tag
 }
