@@ -35,6 +35,7 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   }
 
   lazy val thriftJava = thriftTask("java", generatedThriftDirectoryPath, thriftFile) describedAs("Build Thrift Java")
+  lazy val thriftRuby = thriftTask("rb", generatedThriftDirectoryPath, thriftFile) describedAs("Build Thrift Ruby")
 
   override def disableCrossPaths = true
   override def compileAction = super.compileAction dependsOn(thriftJava)
