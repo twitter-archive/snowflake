@@ -15,6 +15,7 @@ import net.lag.logging.Logger
 import java.util.concurrent.LinkedBlockingDeque
 import java.net.ConnectException
 
+
 class Reporter extends Runnable {
   private val log = Logger.get
 
@@ -27,6 +28,7 @@ class Reporter extends Runnable {
   private var scribeClient : Option[Client] = None
   private val structs = new ArrayList[TTBase](100)
   private val entries = new ArrayList[LogEntry](100)
+  private var running = true
   val thread = new Thread(this)
   thread.start
 
@@ -40,7 +42,7 @@ class Reporter extends Runnable {
   }
 
   override def run {
-    while(true) {
+    while(running) {
       connect
       queue.drainTo(structs, 100)
       if (structs.size > 0) {
@@ -101,5 +103,10 @@ class Reporter extends Runnable {
         "("+getFileName+":"+getLineNumber+")"
       }.mkString("\n")
     )
+  }
+
+  override def finalize() {
+    running = false
+    thread.join
   }
 }
