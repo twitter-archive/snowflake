@@ -2,7 +2,6 @@
 package com.twitter.service.snowflake
 
 import com.twitter.ostrich.Stats
-import com.twitter.ostrich.W3CReporter
 import com.twitter.service.snowflake.gen._
 import net.lag.logging.Logger
 import java.util.Random
