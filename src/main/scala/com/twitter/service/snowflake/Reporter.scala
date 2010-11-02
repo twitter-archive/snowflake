@@ -19,15 +19,14 @@ import java.net.ConnectException
 class Reporter extends Runnable {
   private val log = Logger.get
 
-  private lazy val serializer = new TSerializer(new TBinaryProtocol.Factory())
-
-  //cargo-culted from rockdove
-  type TTBase = TBase[_ <: TFieldIdEnum]
+  type TTBase = TBase[_ <: TFieldIdEnum] //cargo-culted from rockdove
 
   private val queue = new LinkedBlockingDeque[TTBase]
-  private var scribeClient : Option[Client] = None
   private val structs = new ArrayList[TTBase](100)
   private val entries = new ArrayList[LogEntry](100)
+  private var scribeClient: Option[Client] = None
+  private val serializer = new TSerializer(new TBinaryProtocol.Factory())
+
   private var running = true
   val thread = new Thread(this)
   thread.start
