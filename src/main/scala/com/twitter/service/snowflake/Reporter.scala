@@ -37,6 +37,7 @@ class Reporter extends Runnable {
       queue.put(struct)
     } catch {
       case e => {
+        logError(e)
       }
     }
   }
@@ -70,6 +71,7 @@ class Reporter extends Runnable {
     scribeClient = None
 
     log.error("caught a thrift error. gonna chill for a bit. queue is %d".format(queue.size))
+    logError(e)
     Thread.sleep(1000)
   }
 
