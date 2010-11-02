@@ -68,11 +68,11 @@ class Reporter {
           scribeClient = Some(new Client(protocol, protocol))
         } catch {
           case e: ConnectException => {
-            log.debug("failed to created scribe client"); 
+            log.debug("failed to created scribe client")
             Thread.sleep(10000)
           }
         }
-      } 
+      }
     }
 
     private def serialize[T <: TTBase](struct: T): String = {
