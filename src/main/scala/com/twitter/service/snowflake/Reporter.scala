@@ -16,8 +16,8 @@ import java.util.concurrent.LinkedBlockingDeque
 import java.net.ConnectException
 
 
-class Reporter extends Runnable {
-  private val log = Logger.get
+class Reporter {
+  private val log = Logger.get(getClass.getName)
 
   type TTBase = TBase[_ <: TFieldIdEnum] //cargo-culted from rockdove
 
