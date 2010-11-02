@@ -19,8 +19,8 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1"
   val sp = "org.scala-tools.testing" % "specs"  % "1.6.2.2"
   val thrift = "thrift" % "libthrift" % "0.2.0"
-  val zookeeperClient = "com.twitter" % "zookeeper-client" % "1.5"
   val commonsCodec = "commons-codec" % "commons-codec" % "1.4"
+  val zookeeperClient = "com.twitter" % "zookeeper-client" % "1.5.1"
 
   def generatedThriftDirectoryPath = "src_managed" / "main"
   def thriftDirectoryPath = "src" / "main" / "thrift"
