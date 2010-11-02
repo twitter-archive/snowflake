@@ -14,7 +14,7 @@ import org.apache.thrift.{TBase, TException, TFieldIdEnum, TSerializer, TDeseria
 import net.lag.logging.Logger
 import java.util.concurrent.LinkedBlockingDeque
 import java.net.ConnectException
-
+import com.twitter.ostrich.BackgroundProcess
 
 class Reporter {
   private val log = Logger.get(getClass.getName)
@@ -27,22 +27,8 @@ class Reporter {
   private var scribeClient: Option[Client] = None
   private val serializer = new TSerializer(new TBinaryProtocol.Factory())
 
-  private var running = true
-  val thread = new Thread(this)
-  thread.start
-
-  def report[T <: TTBase](struct: T) {
-    try {
-      queue.put(struct)
-    } catch {
-      case e => {
-        logError(e)
-      }
-    }
-  }
-
-  override def run {
-    while(running) {
+  val thread = new BackgroundProcess("Reporter flusher") {
+    def runLoop {
       connect
       queue.drainTo(structs, 100)
       if (structs.size > 0) {
@@ -61,38 +47,49 @@ class Reporter {
         }
       } else {
         log.debug("no items. gonna back off")
-        Thread.sleep(100)
+        Thread.sleep(1000)
       }
     }
-  }
 
-  private def handle_exception[T <: TTBase](e: Throwable, items: ArrayList[T]) {
-    scribeClient = None
+    private def handle_exception[T <: TTBase](e: Throwable, items: ArrayList[T]) {
+      scribeClient = None
 
-    log.error("caught a thrift error. gonna chill for a bit. queue is %d".format(queue.size))
-    logError(e)
-    Thread.sleep(1000)
-  }
+      log.error("caught a thrift error. gonna chill for a bit. queue is %d".format(queue.size))
+      logError(e)
+      Thread.sleep(10000)
+    }
 
-  private def connect {
-    while(scribeClient.isEmpty) {
-      try {
-        var sock = new TSocket(new Socket("localhost", 1463))
-        var transport = new TFramedTransport(sock)
-        var protocol = new TBinaryProtocol(transport, false, false)
-        scribeClient = Some(new Client(protocol, protocol))
-      } catch {
-        case e: ConnectException => {
-          log.debug("failed to created scribe client"); 
-          Thread.sleep(1000)
+    private def connect {
+      while(scribeClient.isEmpty) {
+        try {
+          var sock = new TSocket(new Socket("localhost", 1463))
+          var transport = new TFramedTransport(sock)
+          var protocol = new TBinaryProtocol(transport, false, false)
+          scribeClient = Some(new Client(protocol, protocol))
+        } catch {
+          case e: ConnectException => {
+            log.debug("failed to created scribe client"); 
+            Thread.sleep(10000)
+          }
         }
-      }
-    } 
-  }
+      } 
+    }
 
-  private def serialize[T <: TTBase](struct: T): String = {
-    val b64 = new Base64(0)
-    b64.encodeToString(serializer.serialize(struct)) + "\n"
+    private def serialize[T <: TTBase](struct: T): String = {
+      val b64 = new Base64(0)
+      b64.encodeToString(serializer.serialize(struct)) + "\n"
+    }
+  }
+  thread.start
+
+  def report[T <: TTBase](struct: T) {
+    try {
+      queue.put(struct)
+    } catch {
+      case e => {
+        logError(e)
+      }
+    }
   }
 
   private def logError(e: Throwable) {
@@ -107,7 +104,6 @@ class Reporter {
   }
 
   override def finalize() {
-    running = false
-    thread.join
+    thread.stop
   }
 }
