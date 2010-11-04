@@ -17,7 +17,7 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
   private val idLog = new W3CReporter(Logger.get("w3c"))
   val genCounter = Stats.getCounter("ids_generated")
 
-  val twepoch = 1240821140980L
+  val twepoch = 1288834974657L
 
   var sequence = 0L
   val workerIdBits = 5
