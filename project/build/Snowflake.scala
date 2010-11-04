@@ -13,7 +13,7 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.5.8"
   val slf4jLog = "org.slf4j" % "slf4j-log4j12" % "1.5.8"
   val log4j = "apache-log4j" % "log4j" % "1.2.15"
-  val configgy = "net.lag" % "configgy" % "1.4.7"
+  val configgy = "net.lag" % "configgy" % "1.6.8"
   val commonsPool = "commons-pool" % "commons-pool" % "1.5.4"
   val ostrich = "com.twitter" % "ostrich" % "1.1.24"
   val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1"
