@@ -15,17 +15,21 @@ import net.lag.logging.Logger
 import java.util.concurrent.LinkedBlockingDeque
 import java.net.ConnectException
 import com.twitter.ostrich.BackgroundProcess
+import com.twitter.ostrich.Stats
 
 class Reporter {
   private val log = Logger.get(getClass.getName)
 
   type TTBase = TBase[_ <: TFieldIdEnum] //cargo-culted from rockdove
 
-  private val queue = new LinkedBlockingDeque[TTBase]
+  private val queue = new LinkedBlockingDeque[TTBase](1000000) //TODO make this configurable
   private val structs = new ArrayList[TTBase](100)
   private val entries = new ArrayList[LogEntry](100)
   private var scribeClient: Option[Client] = None
   private val serializer = new TSerializer(new TBinaryProtocol.Factory())
+
+  Stats.makeGauge("scibe_flush_queue") { queue.size() }
+  val enqueueFailuresCounter = Stats.getCounter("scribe_enqueue_failures")
 
   val thread = new BackgroundProcess("Reporter flusher") {
     def runLoop {
@@ -84,7 +88,11 @@ class Reporter {
 
   def report[T <: TTBase](struct: T) {
     try {
-      queue.put(struct)
+      val success = queue.offer(struct)
+      if (!success) {
+        log.error("Failed to enueue entry for scribe queue. Queue size is %d".format(queue.size))
+        enqueueFailuresCounter.incr()
+      }
     } catch {
       case e => {
         logError(e)
