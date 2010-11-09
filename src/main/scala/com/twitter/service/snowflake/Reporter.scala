@@ -41,7 +41,7 @@ class Reporter {
         }
         try {
           scribeClient.get.Log(entries) //TODO timeout
-          log.debug("reported %d items to scribe. queue is %d".format(entries.size, queue.size))
+          log.trace("reported %d items to scribe. queue is %d".format(entries.size, queue.size))
         } catch {
           case e: TTransportException =>  { handle_exception(e, structs) }
           case e: ConnectException    =>  { handle_exception(e, structs) }
@@ -50,7 +50,7 @@ class Reporter {
           entries.clear
         }
       } else {
-        log.debug("no items. gonna back off")
+        log.trace("no items. gonna back off")
         Thread.sleep(1000)
       }
     }
@@ -66,7 +66,7 @@ class Reporter {
     private def connect {
       while(scribeClient.isEmpty) {
         try {
-          var sock = new TSocket("localhost", 1463, 5000) //TODO make these configurable
+          var sock = new TSocket(new Socket("localhost", 1463)) //TODO make these configurable
           var transport = new TFramedTransport(sock)
           var protocol = new TBinaryProtocol(transport, false, false)
           scribeClient = Some(new Client(protocol, protocol))
