@@ -19,6 +19,7 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1"
   val sp = "org.scala-tools.testing" % "specs"  % "1.6.2.2"
   val thrift = "thrift" % "libthrift" % "0.2.0"
+  val commonsCodec = "commons-codec" % "commons-codec" % "1.4"
   val zookeeperClient = "com.twitter" % "zookeeper-client" % "1.5.1"
 
   def generatedThriftDirectoryPath = "src_managed" / "main"
@@ -35,6 +36,7 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   }
 
   lazy val thriftJava = thriftTask("java", generatedThriftDirectoryPath, thriftFile) describedAs("Build Thrift Java")
+  lazy val thriftRuby = thriftTask("rb", generatedThriftDirectoryPath, thriftFile) describedAs("Build Thrift Ruby")
 
   override def disableCrossPaths = true
   override def compileAction = super.compileAction dependsOn(thriftJava)

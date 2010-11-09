@@ -2,9 +2,9 @@
 package com.twitter.service.snowflake
 
 import com.twitter.ostrich.Stats
-import com.twitter.ostrich.W3CReporter
 import com.twitter.service.snowflake.gen._
 import net.lag.logging.Logger
+import java.util.Random
 
 /**
  * An object that generates IDs.
@@ -14,8 +14,9 @@ import net.lag.logging.Logger
  */
 class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
   private val log = Logger.get
-  private val idLog = new W3CReporter(Logger.get("w3c"))
   val genCounter = Stats.getCounter("ids_generated")
+  val reporter = new Reporter
+  val rand = new Random
 
   val twepoch = 1288834974657L
 
@@ -51,7 +52,8 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
     }
 
     val id = nextId()
-    idLog.report(Map("id" -> id, "useragent" -> useragent, "worker_id" -> workerId))
+
+    reporter.report(new AuditLogEntry(id, useragent, rand.nextLong))
     id
   }
 
