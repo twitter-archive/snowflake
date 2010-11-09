@@ -18,8 +18,7 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
   val reporter = new Reporter
   val rand = new Random
 
-  // Tue, 21 Mar 2006 20:50:14.000 GMT
-  val twepoch = 1142974214000L
+  val twepoch = 1288834974657L
 
   var sequence = 0L
   val workerIdBits = 5

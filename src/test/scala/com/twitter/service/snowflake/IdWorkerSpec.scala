@@ -139,6 +139,11 @@ class IdWorkerSpec extends Specification {
       }
       set.size must be_==(n)
     }
+
+    "generate ids over 50 billion" in {
+      val worker = new IdWorker(0, 0)
+      worker.nextId must be_>(50000000000L)
+    }
   }
 
   "validUseragent" should {
