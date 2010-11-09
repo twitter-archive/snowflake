@@ -22,7 +22,7 @@ class Reporter {
 
   type TTBase = TBase[_ <: TFieldIdEnum] //cargo-culted from rockdove
 
-  private val queue = new LinkedBlockingDeque[TTBase](1000000) //TODO make this configurable
+  val queue = new LinkedBlockingDeque[TTBase](1000000) //TODO make this configurable
   private val structs = new ArrayList[TTBase](100)
   private val entries = new ArrayList[LogEntry](100)
   private var scribeClient: Option[Client] = None
