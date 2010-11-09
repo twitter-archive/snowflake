@@ -37,7 +37,7 @@ class Reporter {
       queue.drainTo(structs, 100)
       if (structs.size > 0) {
         for (i <- 0 until structs.size) {
-          entries.add(i, new LogEntry("snowflake", serialize(structs.get(i))))
+          entries.add(i, new LogEntry("snowflake_thrift", serialize(structs.get(i)))) //TODO config
         }
         try {
           scribeClient.get.Log(entries) //TODO timeout
@@ -66,7 +66,7 @@ class Reporter {
     private def connect {
       while(scribeClient.isEmpty) {
         try {
-          var sock = new TSocket(new Socket("localhost", 1463))
+          var sock = new TSocket("localhost", 1463, 5000) //TODO make these configurable
           var transport = new TFramedTransport(sock)
           var protocol = new TBinaryProtocol(transport, false, false)
           scribeClient = Some(new Client(protocol, protocol))
