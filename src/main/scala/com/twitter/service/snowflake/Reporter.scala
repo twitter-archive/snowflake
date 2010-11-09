@@ -33,7 +33,7 @@ class Reporter {
   private var scribeClient: Option[Client] = None
   private val serializer = new TSerializer(new TBinaryProtocol.Factory())
 
-  Stats.makeGauge("scribe_flush_queue") { queue.size() }
+  Stats.makeGauge("reporter_flush_queue") { queue.size() }
   val enqueueFailuresCounter = Stats.getCounter("scribe_enqueue_failures")
 
   val thread = new BackgroundProcess("Reporter flusher") {
