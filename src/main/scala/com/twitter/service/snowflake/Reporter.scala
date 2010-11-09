@@ -60,9 +60,14 @@ class Reporter {
     }
 
     private def handle_exception[T <: TTBase](e: Throwable, items: ArrayList[T]) {
-      //TODO put items back on queue
-      scribeClient = None
+      for(i <- items.size until 0) {
+        val success = queue.offerFirst(items.get(i))
+        if (!success) {
+          log.error("unable to reenqueue item on failure")
+        }
+      }
 
+      scribeClient = None
       log.error("caught a thrift error. gonna chill for a bit. queue is %d".format(queue.size))
       logError(e)
       Thread.sleep(10000)
