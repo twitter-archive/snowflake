@@ -1,6 +1,5 @@
 #!/usr/bin/ruby 
 require 'rubygems'
-require 'thrift_client'
 require 'snowflake'
 
 if ARGV.length < 3
@@ -11,7 +10,13 @@ count   = ARGV.shift.to_i
 servers = ARGV.shift
 agent   = ARGV.shift
 
-client = ThriftClient.new(Snowflake::Client, servers.split(/,/), :transport_wrapper => Thrift::FramedTransport, :randomize_server_list => true)
+host, port = servers.split(/,/).first.split(/:/)
+p host
+p port
+socket = Thrift::Socket.new(host, port.to_i, 1)
+socket.open
+connection = Thrift::FramedTransport.new(socket)
+client = Twitter::Snowflake::Snowflake::Client.new(Thrift::BinaryProtocol.new(connection))
 
 worker_id = client.get_worker_id
 

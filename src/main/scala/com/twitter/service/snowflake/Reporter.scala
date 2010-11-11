@@ -4,6 +4,7 @@ package com.twitter.service.snowflake
 import com.twitter.ostrich.BackgroundProcess
 import com.twitter.ostrich.Stats
 import com.twitter.service.snowflake.gen.AuditLogEntry
+import java.io.ByteArrayOutputStream
 import java.net.ConnectException
 import java.net.Socket
 import java.util.ArrayList
@@ -11,6 +12,7 @@ import java.util.concurrent.LinkedBlockingDeque
 import net.lag.configgy._
 import net.lag.logging.Logger
 import org.apache.commons.codec.binary.Base64;
+import org.apache.thrift.transport.TIOStreamTransport;
 import org.apache.scribe.LogEntry
 import org.apache.scribe.scribe.Client
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocolFactory}
@@ -20,18 +22,17 @@ import org.apache.thrift.{TBase, TException, TFieldIdEnum, TSerializer, TDeseria
 class Reporter {
   private val log = Logger.get(getClass.getName)
   private val config = Configgy.config.configMap("snowflake.reporter")
-  private val scribe_category = config.getString("scribe_category", "snowflake_thrift")
-  private val scribe_host = config.getString("scribe_host", "localhost")
-  private val scribe_port = config.getInt("scribe_port", 1463)
-  private val scribe_socket_timeout = config.getInt("scribe_socket_timeout", 5000)
+  private val scribe_category = config("scribe_category")
+  private val scribe_host = config("scribe_host")
+  private val scribe_port = config("scribe_port").toInt
+  private val scribe_socket_timeout = config("scribe_socket_timeout").toInt
 
-  type TTBase = TBase[_ <: TFieldIdEnum] //cargo-culted from rockdove
-
-  val queue = new LinkedBlockingDeque[TTBase](config.getInt("flush_queue_limit", 100000))
-  private val structs = new ArrayList[TTBase](100)
+  val queue = new LinkedBlockingDeque[TBase[_,_]](config("flush_queue_limit").toInt)
+  private val structs = new ArrayList[TBase[_,_]](100)
   private val entries = new ArrayList[LogEntry](100)
   private var scribeClient: Option[Client] = None
-  private val serializer = new TSerializer(new TBinaryProtocol.Factory())
+  private val baos = new ByteArrayOutputStream
+  private val protocol = (new TBinaryProtocol.Factory).getProtocol(new TIOStreamTransport(baos))
 
   Stats.makeGauge("reporter_flush_queue") { queue.size() }
   val enqueueFailuresCounter = Stats.getCounter("scribe_enqueue_failures")
@@ -59,7 +60,7 @@ class Reporter {
       }
     }
 
-    private def handle_exception[T <: TTBase](e: Throwable, items: ArrayList[T]) {
+    private def handle_exception(e: Throwable, items: ArrayList[TBase[_,_]]) {
       for(i <- items.size until 0) {
         val success = queue.offerFirst(items.get(i))
         if (!success) {
@@ -76,13 +77,14 @@ class Reporter {
     private def connect {
       while(scribeClient.isEmpty) {
         try {
+          log.debug("connection to scribe at %s:%d with timeout %d".format(scribe_host, scribe_port, scribe_socket_timeout))
           var sock = new TSocket(scribe_host, scribe_port, scribe_socket_timeout)
           sock.open()
           var transport = new TFramedTransport(sock)
           var protocol = new TBinaryProtocol(transport, false, false)
           scribeClient = Some(new Client(protocol, protocol))
         } catch {
-          case e: ConnectException => {
+          case e: TTransportException => {
             log.debug("failed to created scribe client")
             Thread.sleep(10000)
           }
@@ -90,14 +92,16 @@ class Reporter {
       }
     }
 
-    private def serialize[T <: TTBase](struct: T): String = {
+    private def serialize(struct: TBase[_,_]): String = {
       val b64 = new Base64(0)
-      b64.encodeToString(serializer.serialize(struct)) + "\n"
+      baos.reset
+      struct.write(protocol)
+      b64.encodeToString(baos.toByteArray) + "\n"
     }
   }
   thread.start
 
-  def report[T <: TTBase](struct: T) {
+  def report(struct: TBase[_,_]) {
     try {
       val success = queue.offer(struct)
       if (!success) {

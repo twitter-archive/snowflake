@@ -18,29 +18,10 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   val ostrich = "com.twitter" % "ostrich" % "1.1.24"
   val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1"
   val sp = "org.scala-tools.testing" % "specs"  % "1.6.2.2"
-  val thrift = "thrift" % "libthrift" % "0.2.0"
+  val thrift = "thrift" % "libthrift" % "0.5.0"
   val commonsCodec = "commons-codec" % "commons-codec" % "1.4"
   val zookeeperClient = "com.twitter" % "zookeeper-client" % "1.5.1"
 
-  def generatedThriftDirectoryPath = "src_managed" / "main"
-  def thriftDirectoryPath = "src" / "main" / "thrift"
-  def thriftFile = thriftDirectoryPath / "Snowflake.thrift"
-
-  def thriftTask(lang: String, directory: Path, thriftFile: Path) = {
-    val cleanIt = cleanTask(directory / ("gen-" + lang)) named("clean-thrift-" + lang)
-    val createIt = task { FileUtilities.createDirectory(directory, log) } named("create-managed-src-dir-" + lang)
-
-    execTask {
-      <x>thrift --gen {lang} -o {directory.absolutePath} {thriftFile.absolutePath}</x>
-    } dependsOn(cleanIt, createIt)
-  }
-
-  lazy val thriftJava = thriftTask("java", generatedThriftDirectoryPath, thriftFile) describedAs("Build Thrift Java")
-  lazy val thriftRuby = thriftTask("rb", generatedThriftDirectoryPath, thriftFile) describedAs("Build Thrift Ruby")
-
-  override def disableCrossPaths = true
-  override def compileAction = super.compileAction dependsOn(thriftJava)
-  override def compileOrder = CompileOrder.JavaThenScala
   override def mainClass = Some("com.twitter.service.snowflake.SnowflakeServer")
   override def releaseBuild = true
 
