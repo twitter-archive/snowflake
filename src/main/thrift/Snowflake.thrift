@@ -1,6 +1,5 @@
 /* Copyright 2010 Twitter, Inc. */
 namespace java com.twitter.service.snowflake.gen
-namespace ruby Twitter.Snowflake
 
 exception InvalidSystemClock {
   1: string message,
