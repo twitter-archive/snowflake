@@ -61,12 +61,11 @@ object SnowflakeServer {
       val processor = new Snowflake.Processor(worker)
       val transport = new TNonblockingServerSocket(port)
       val serverOpts = new THsHaServer.Options
-      serverOpts.minWorkerThreads = Configgy.config("snowflake.thrift-server-threads-min").toInt
-      serverOpts.maxWorkerThreads = Configgy.config("snowflake.thrift-server-threads-max").toInt
+      serverOpts.workerThreads = Configgy.config("snowflake.thrift-server-threads").toInt
 
       val server = new THsHaServer(processor, transport, serverOpts)
 
-      log.info("Starting server on port %s with minWorkerThreads=%s and maxWorkerThreads=%s", port, serverOpts.minWorkerThreads, serverOpts.maxWorkerThreads)
+      log.info("Starting server on port %s with workerThreads=%s", port, serverOpts.workerThreads)
       server.serve()
     } catch {
       case e: Exception => {
