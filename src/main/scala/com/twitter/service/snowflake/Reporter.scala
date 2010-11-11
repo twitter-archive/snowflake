@@ -77,7 +77,7 @@ class Reporter {
     private def connect {
       while(scribeClient.isEmpty) {
         try {
-          log.debug("connectoin to scribe at %s:%d with timeout %d".format(scribe_host, scribe_port, scribe_socket_timeout))
+          log.debug("connection to scribe at %s:%d with timeout %d".format(scribe_host, scribe_port, scribe_socket_timeout))
           var sock = new TSocket(scribe_host, scribe_port, scribe_socket_timeout)
           sock.open()
           var transport = new TFramedTransport(sock)
