@@ -16,7 +16,7 @@ p port
 socket = Thrift::Socket.new(host, port.to_i, 1)
 socket.open
 connection = Thrift::FramedTransport.new(socket)
-client = Twitter::Snowflake::Snowflake::Client.new(Thrift::BinaryProtocol.new(connection))
+client = Snowflake::Client.new(Thrift::BinaryProtocol.new(connection))
 
 worker_id = client.get_worker_id
 
