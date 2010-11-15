@@ -15,6 +15,7 @@ import java.util.Random
 class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
   private val log = Logger.get
   val genCounter = Stats.getCounter("ids_generated")
+  val exceptionCounter = Stats.getCounter("exceptions")
   val reporter = new Reporter
   val rand = new Random
 
@@ -36,10 +37,12 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
 
   // sanity check for workerId
   if (workerId > maxWorkerId || workerId < 0) {
+    exceptionCounter.incr(1)
     throw new IllegalArgumentException("worker Id can't be greater than %d or less than 0".format(maxWorkerId))
   }
 
   if (datacenterId > maxDatacenterId || datacenterId < 0) {
+    exceptionCounter.incr(1)
     throw new IllegalArgumentException("datacenter Id can't be greater than %d or less than 0".format(maxWorkerId))
   }
 
@@ -48,6 +51,7 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
 
   def get_id(useragent: String): Long = {
     if (!validUseragent(useragent)) {
+      exceptionCounter.incr(1)
       throw new InvalidUserAgentError
     }
 
@@ -65,8 +69,9 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
     var timestamp = timeGen()
 
     if (lastTimestamp > timestamp) {
-        log.warning("clock is moving backwards.  Rejecting requests until %d.", lastTimestamp);
-        throw new InvalidSystemClock("Clock moved backwards.  Refusing to generate id for %d milliseconds".format(lastTimestamp - timestamp));
+      exceptionCounter.incr(1)
+      log.error("clock is moving backwards.  Rejecting requests until %d.", lastTimestamp);
+      throw new InvalidSystemClock("Clock moved backwards.  Refusing to generate id for %d milliseconds".format(lastTimestamp - timestamp));
     }
 
     if (lastTimestamp == timestamp) {
