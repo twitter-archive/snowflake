@@ -5,6 +5,7 @@ import com.twitter.ostrich.Stats
 import com.twitter.service.snowflake.gen._
 import net.lag.logging.Logger
 import java.util.Random
+import com.twitter.collections.FIFOHashSet
 
 /**
  * An object that generates IDs.
@@ -17,6 +18,9 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
   val genCounter = Stats.getCounter("ids_generated")
   val reporter = new Reporter
   val rand = new Random
+  val idsCache = new FIFOHashSet[Long](100000) // TODO make this configurable
+
+  Stats.makeGauge("ids_cache_size") { idsCache.size }
 
   val twepoch = 1288834974657L
 
@@ -54,6 +58,10 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
     val id = nextId()
 
     reporter.report(new AuditLogEntry(id, useragent, rand.nextLong))
+    if (idsCache.contains(id)) {
+      throw new Exception("id collision error on the server")
+    }
+    idsCache.add(id)
     id
   }
 
