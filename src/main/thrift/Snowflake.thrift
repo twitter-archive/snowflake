@@ -9,6 +9,10 @@ exception InvalidUserAgentError {
   1: string message,
 }
 
+exception SnowflakeIdCollisionError {
+  1: string message,
+}
+
 service Snowflake {
   i64 get_worker_id()
   i64 get_timestamp()
