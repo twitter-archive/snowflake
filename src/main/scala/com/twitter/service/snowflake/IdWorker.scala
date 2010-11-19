@@ -21,6 +21,7 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
   val idsCache = new FIFOHashSet[Long](100000) // TODO make this configurable
 
   Stats.makeGauge("ids_cache_size") { idsCache.size }
+  val collisionCounter = Stats.getCounter("collisions")
 
   val twepoch = 1288834974657L
 
@@ -59,6 +60,7 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
 
     reporter.report(new AuditLogEntry(id, useragent, rand.nextLong))
     if (idsCache.contains(id)) {
+      collisionCounter.incr(1)
       throw new SnowflakeIdCollisionError("id collision error on the server")
     }
     idsCache.add(id)
