@@ -59,7 +59,7 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
 
     reporter.report(new AuditLogEntry(id, useragent, rand.nextLong))
     if (idsCache.contains(id)) {
-      throw new Exception("id collision error on the server")
+      throw new SnowflakeIdCollisionError("id collision error on the server")
     }
     idsCache.add(id)
     id
