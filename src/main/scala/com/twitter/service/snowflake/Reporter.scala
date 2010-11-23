@@ -36,6 +36,7 @@ class Reporter {
 
   Stats.makeGauge("reporter_flush_queue") { queue.size() }
   val enqueueFailuresCounter = Stats.getCounter("scribe_enqueue_failures")
+  val exceptionCounter = Stats.getCounter("exceptions")
 
   val thread = new BackgroundProcess("Reporter flusher") {
     def runLoop {
@@ -61,6 +62,7 @@ class Reporter {
     }
 
     private def handle_exception(e: Throwable, items: ArrayList[TBase[_,_]]) {
+      exceptionCounter.incr(1)
       for(i <- items.size until 0) {
         val success = queue.offerFirst(items.get(i))
         if (!success) {
@@ -85,6 +87,7 @@ class Reporter {
           scribeClient = Some(new Client(protocol, protocol))
         } catch {
           case e: TTransportException => {
+            exceptionCounter.incr(1)
             log.debug("failed to created scribe client")
             Thread.sleep(10000)
           }
@@ -110,6 +113,7 @@ class Reporter {
       }
     } catch {
       case e => {
+        exceptionCounter.incr(1)
         logError(e)
       }
     }
