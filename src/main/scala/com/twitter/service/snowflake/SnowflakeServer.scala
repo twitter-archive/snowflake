@@ -6,7 +6,7 @@ import com.twitter.service.snowflake.gen._
 import org.apache.thrift.{TException, TProcessor, TProcessorFactory}
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol, TProtocolFactory}
 import org.apache.thrift.transport._
-import org.apache.thrift.server.{THsHaServer, TServer}
+import org.apache.thrift.server.{TNonblockingServer, TServer}
 import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
 import com.twitter.zookeeper.ZooKeeperClient
@@ -60,12 +60,10 @@ object SnowflakeServer {
 
       val processor = new Snowflake.Processor(worker)
       val transport = new TNonblockingServerSocket(port)
-      val serverOpts = new THsHaServer.Options
-      serverOpts.workerThreads = Configgy.config("snowflake.thrift-server-threads").toInt
 
-      val server = new THsHaServer(processor, transport, serverOpts)
+      val server = new TNonblockingServer(processor, transport)
 
-      log.info("Starting server on port %s with workerThreads=%s", port, serverOpts.workerThreads)
+//      log.info("Starting server on port %s with workerThreads=%s", port, serverOpts.workerThreads)
       server.serve()
     } catch {
       case e: Exception => {
