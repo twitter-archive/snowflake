@@ -18,7 +18,7 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   val ostrich = "com.twitter" % "ostrich" % "1.1.24"
   val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1"
   val sp = "org.scala-tools.testing" % "specs"  % "1.6.2.2"
-  val thrift = "thrift" % "libthrift" % "0.5.0"
+  val thrift = "thrift" % "libthrift" % "0.2.0"
   val commonsCodec = "commons-codec" % "commons-codec" % "1.4"
   val zookeeperClient = "com.twitter" % "zookeeper-client" % "1.5.1"
 
