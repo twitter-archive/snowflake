@@ -17,6 +17,7 @@ import org.apache.zookeeper.{KeeperException, CreateMode, Watcher, WatchedEvent}
 import org.apache.zookeeper.KeeperException.NodeExistsException
 import scala.collection.mutable
 import java.net.InetAddress
+import com.twitter.ostrich.Stats
 
 case class Peer(hostname: String, port: Int)
 
@@ -34,6 +35,8 @@ object SnowflakeServer {
     new ZooKeeperClient(zkHostlist)
   }
 
+  Stats.makeGauge("datacenter_id") { datacenterId }
+  Stats.makeGauge("worker_id") { workerId }
   def shutdown(): Unit = {
     if (server != null) {
       log.info("Shutting down.")
