@@ -14,26 +14,26 @@ import java.util.Random
  */
 class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
   private val log = Logger.get
-  val genCounter = Stats.getCounter("ids_generated")
-  val exceptionCounter = Stats.getCounter("exceptions")
-  val reporter = new Reporter
-  val rand = new Random
+  private val genCounter = Stats.getCounter("ids_generated")
+  private val exceptionCounter = Stats.getCounter("exceptions")
+  private val reporter = new Reporter
+  private val rand = new Random
 
   val twepoch = 1288834974657L
 
-  var sequence = 0L
-  val workerIdBits = 5
-  val datacenterIdBits = 5
-  val maxWorkerId = -1L ^ (-1L << workerIdBits)
-  val maxDatacenterId = -1L ^ (-1L << datacenterIdBits)
-  val sequenceBits = 12
+  var sequence = 0L //TODO after 2.8 make this a constructor param with a default of 0
+  private val workerIdBits = 5
+  private val datacenterIdBits = 5
+  private val maxWorkerId = -1L ^ (-1L << workerIdBits)
+  private val maxDatacenterId = -1L ^ (-1L << datacenterIdBits)
+  private val sequenceBits = 12
 
-  val workerIdShift = sequenceBits
-  val datacenterIdShift = sequenceBits + workerIdBits
-  val timestampLeftShift = sequenceBits + workerIdBits + datacenterIdBits
-  val sequenceMask = -1L ^ (-1L << sequenceBits)
+  private val workerIdShift = sequenceBits
+  private val datacenterIdShift = sequenceBits + workerIdBits
+  private val timestampLeftShift = sequenceBits + workerIdBits + datacenterIdBits
+  private val sequenceMask = -1L ^ (-1L << sequenceBits)
 
-  var lastTimestamp = -1L
+  private var lastTimestamp = -1L
 
   // sanity check for workerId
   if (workerId > maxWorkerId || workerId < 0) {
@@ -65,7 +65,7 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
   def get_datacenter_id(): Long = datacenterId
   def get_timestamp() = System.currentTimeMillis
 
-  def nextId(): Long = synchronized {
+  protected[snowflake] def nextId(): Long = synchronized {
     var timestamp = timeGen()
 
     if (lastTimestamp > timestamp) {
@@ -91,7 +91,7 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
       sequence
   }
 
-  def tilNextMillis(lastTimestamp: Long): Long = {
+  protected def tilNextMillis(lastTimestamp: Long): Long = {
     var timestamp = timeGen()
     while (lastTimestamp == timestamp) {
       timestamp = timeGen()
@@ -99,7 +99,7 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
     timestamp
   }
 
-  def timeGen(): Long = System.currentTimeMillis()
+  protected def timeGen(): Long = System.currentTimeMillis()
 
   val AgentParser = """([a-zA-Z][a-zA-Z\-0-9]*)""".r
 
