@@ -22,11 +22,11 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
   val twepoch = 1288834974657L
 
   var sequence = 0L //TODO after 2.8 make this a constructor param with a default of 0
-  private val workerIdBits = 5
-  private val datacenterIdBits = 5
+  private val workerIdBits = 5L
+  private val datacenterIdBits = 5L
   private val maxWorkerId = -1L ^ (-1L << workerIdBits)
   private val maxDatacenterId = -1L ^ (-1L << datacenterIdBits)
-  private val sequenceBits = 12
+  private val sequenceBits = 12L
 
   private val workerIdShift = sequenceBits
   private val datacenterIdShift = sequenceBits + workerIdBits
@@ -43,7 +43,7 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
 
   if (datacenterId > maxDatacenterId || datacenterId < 0) {
     exceptionCounter.incr(1)
-    throw new IllegalArgumentException("datacenter Id can't be greater than %d or less than 0".format(maxWorkerId))
+    throw new IllegalArgumentException("datacenter Id can't be greater than %d or less than 0".format(maxDatacenterId))
   }
 
   log.info("worker starting. timestamp left shift %d, datacenter id bits %d, worker id bits %d, sequence bits %d, workerid %d",
@@ -68,12 +68,6 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
   protected[snowflake] def nextId(): Long = synchronized {
     var timestamp = timeGen()
 
-    if (lastTimestamp > timestamp) {
-      exceptionCounter.incr(1)
-      log.error("clock is moving backwards.  Rejecting requests until %d.", lastTimestamp);
-      throw new InvalidSystemClock("Clock moved backwards.  Refusing to generate id for %d milliseconds".format(lastTimestamp - timestamp));
-    }
-
     if (lastTimestamp == timestamp) {
       sequence = (sequence + 1) & sequenceMask
       if (sequence == 0) {
@@ -82,6 +76,13 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
     } else {
       sequence = 0
     }
+
+    if (timestamp < lastTimestamp) {
+      exceptionCounter.incr(1)
+      log.error("clock is moving backwards.  Rejecting requests until %d.", lastTimestamp);
+      throw new InvalidSystemClock("Clock moved backwards.  Refusing to generate id for %d milliseconds".format(lastTimestamp - timestamp));
+    }
+
 
     lastTimestamp = timestamp
     genCounter.incr()
@@ -93,7 +94,7 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
 
   protected def tilNextMillis(lastTimestamp: Long): Long = {
     var timestamp = timeGen()
-    while (lastTimestamp == timestamp) {
+    while (timestamp <= lastTimestamp) {
       timestamp = timeGen()
     }
     timestamp
