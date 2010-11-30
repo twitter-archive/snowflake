@@ -4,12 +4,9 @@ import Process._
 
 
 class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
-  // Maven repositories
   val mavenDotOrg = "repo1" at "http://repo1.maven.org/maven2/"
   val jBoss = "jboss-repo" at "http://repository.jboss.org/maven2/"
 
-  // library dependencies
-  // note that JARs in libs/ are also pulled in, and so are not mentioned here
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.5.8"
   val slf4jLog = "org.slf4j" % "slf4j-log4j12" % "1.5.8"
   val log4j = "apache-log4j" % "log4j" % "1.2.15"
