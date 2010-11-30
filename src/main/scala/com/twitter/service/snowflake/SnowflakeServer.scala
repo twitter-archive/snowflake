@@ -63,6 +63,7 @@ object SnowflakeServer {
 
       val server = new TNonblockingServer(processor, transport)
 
+//      log.info("Starting server on port %s with workerThreads=%s", port, serverOpts.workerThreads)
       server.serve()
     } catch {
       case e: Exception => {
