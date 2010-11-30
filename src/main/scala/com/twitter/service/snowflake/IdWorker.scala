@@ -22,8 +22,8 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
   val twepoch = 1288834974657L
 
   var sequence = 0L //TODO after 2.8 make this a constructor param with a default of 0
-  private val workerIdBits = 5
-  private val datacenterIdBits = 5
+  private val workerIdBits = 5L
+  private val datacenterIdBits = 5L
   private val maxWorkerId = -1L ^ (-1L << workerIdBits)
   private val maxDatacenterId = -1L ^ (-1L << datacenterIdBits)
   private val sequenceBits = 12
@@ -43,7 +43,7 @@ class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
 
   if (datacenterId > maxDatacenterId || datacenterId < 0) {
     exceptionCounter.incr(1)
-    throw new IllegalArgumentException("datacenter Id can't be greater than %d or less than 0".format(maxWorkerId))
+    throw new IllegalArgumentException("datacenter Id can't be greater than %d or less than 0".format(maxDatacenterId))
   }
 
   log.info("worker starting. timestamp left shift %d, datacenter id bits %d, worker id bits %d, sequence bits %d, workerid %d",
