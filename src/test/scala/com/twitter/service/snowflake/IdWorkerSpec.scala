@@ -116,7 +116,7 @@ class IdWorkerSpec extends Specification {
     "sleep if we would rollover twice in the same millisecond" in {
       var queue = new scala.collection.mutable.Queue[Long]()
       val worker = new WakingIdWorker(1, 1)
-      val iter = List(2L, 2L, 3L).elements
+      val iter = List(2L, 2L, 3L).iterator
       worker.timeMaker = (() => iter.next)
       worker.sequence = 4095
       worker.nextId

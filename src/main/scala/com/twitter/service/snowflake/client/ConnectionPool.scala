@@ -1,8 +1,8 @@
 /** Copyright 2010 Twitter, Inc. */
 package com.twitter.service.snowflake.client
 
-import gen.Snowflake
-import gen.Snowflake.Client
+import com.twitter.service.snowflake.gen.Snowflake
+import com.twitter.service.snowflake.gen.Snowflake.Client
 import net.lag.configgy.{Config, Configgy}
 import net.lag.logging.Logger
 import org.apache.commons.pool.impl.{GenericObjectPool, StackKeyedObjectPoolFactory}
