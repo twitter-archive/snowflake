@@ -18,7 +18,7 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   val thrift = "thrift" % "libthrift" % "0.5.0"
   val commonsCodec = "commons-codec" % "commons-codec" % "1.4"
 
-  val zookeeperClient = "com.twitter" % "zookeeper-client" % "1.5.2"
+  val zookeeperClient = "com.twitter" % "zookeeper-client" % "2.0.0"
 
   override def mainClass = Some("com.twitter.service.snowflake.SnowflakeServer")
   override def releaseBuild = true
