@@ -56,7 +56,7 @@ object SnowflakeServer {
     registerWorkerId(workerId)
     val port = Configgy.config("admin_http_port").toInt
     val backlog =  Configgy.config("admin_http_backlog").toInt
-    val admin = new AdminService(port, 100, new ostrich.RuntimeEnvironment(getClass))
+    val admin = new AdminService(port, backlog, new ostrich.RuntimeEnvironment(getClass))
 
     Thread.sleep(Configgy.config("snowflake.startup_sleep_ms").toLong)
 
