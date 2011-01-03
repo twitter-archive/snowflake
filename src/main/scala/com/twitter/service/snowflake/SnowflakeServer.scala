@@ -17,6 +17,7 @@ import org.apache.zookeeper.{KeeperException, CreateMode, Watcher, WatchedEvent}
 import org.apache.zookeeper.KeeperException.NodeExistsException
 import scala.collection.mutable
 import java.net.InetAddress
+import com.twitter.ostrich
 import com.twitter.ostrich.Stats
 
 case class Peer(hostname: String, port: Int)
@@ -53,7 +54,9 @@ object SnowflakeServer {
     }
 
     registerWorkerId(workerId)
-    val admin = new AdminService(Configgy.config, runtime)
+    val port = Configgy.config("admin_http_port").toInt
+    val backlog =  Configgy.config("admin_http_backlog").toInt
+    val admin = new AdminService(port, backlog, new ostrich.RuntimeEnvironment(getClass))
 
     Thread.sleep(Configgy.config("snowflake.startup_sleep_ms").toLong)
 
@@ -154,7 +157,7 @@ object SnowflakeServer {
 
     if (timestamps.toSeq.size > 0) {
       val avg = timestamps.foldLeft(0L)(_ + _) / peerCount
-      if (Math.abs(System.currentTimeMillis - avg) > 10000) {
+      if (math.abs(System.currentTimeMillis - avg) > 10000) {
         log.error("Timestamp sanity check failed. Mean timestamp is %d, but mine is %d, " +
                   "so I'm more than 10s away from the mean", avg, System.currentTimeMillis)
         throw new IllegalStateException("timestamp sanity check failed")

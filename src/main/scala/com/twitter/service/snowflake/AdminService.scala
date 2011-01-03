@@ -1,8 +1,8 @@
 package com.twitter.service.snowflake
 
 import com.sun.net.httpserver.HttpExchange
-import com.twitter.ostrich.{AdminHttpService, CustomHttpHandler}
-import net.lag.configgy.{ConfigMap, RuntimeEnvironment}
+import com.twitter.ostrich.{AdminHttpService, CustomHttpHandler, RuntimeEnvironment}
+import net.lag.configgy.ConfigMap
 import java.text.SimpleDateFormat
 import java.util.Date
 import com.twitter.ostrich.Stats
@@ -29,8 +29,8 @@ class StatusHandler extends CustomHttpHandler {
   }
 }
 
-class AdminService(config: ConfigMap, runtime: RuntimeEnvironment) {
-  val adminHttp = new AdminHttpService(config, runtime)
+class AdminService(port: Int, backlog: Int, runtime: RuntimeEnvironment) {
+  val adminHttp = new AdminHttpService(port, backlog, runtime)
   adminHttp.addContext("/status/", new StatusHandler())
   adminHttp.start()
 }
