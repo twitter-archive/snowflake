@@ -28,7 +28,9 @@ object SnowflakeServer {
   var server: TServer = null
   lazy val datacenterId = Configgy.config("snowflake.datacenter_id").toInt
   lazy val workerId: Int = Configgy.config("snowflake.worker_id").toInt
-  lazy val port = Configgy.config("snowflake.server_port").toInt
+  lazy val server_port = Configgy.config("snowflake.server_port").toInt
+  lazy val admin_port = Configgy.config("admin_http_port").toInt
+  lazy val admin_backlog =  Configgy.config("admin_http_backlog").toInt
   lazy val workerIdZkPath = Configgy.config("snowflake.worker_id_path")
   lazy val zkHostlist = Configgy.config("zookeeper-client.hostlist").toString
   lazy val zkClient = {
@@ -54,16 +56,13 @@ object SnowflakeServer {
     }
 
     registerWorkerId(workerId)
-    val server_port = Configgy.config("snowflake.server_port").toInt
-    val admin_port = Configgy.config("admin_http_port").toInt
-    val admin_backlog =  Configgy.config("admin_http_backlog").toInt
     val admin = new AdminService(admin_port, admin_backlog, new ostrich.RuntimeEnvironment(getClass))
 
     Thread.sleep(Configgy.config("snowflake.startup_sleep_ms").toLong)
 
     try {
       val worker = new IdWorker(workerId, datacenterId)
-      log.info("snowflake.server_port loaded: %s", port)
+      log.info("snowflake.server_port loaded: %s", server_port)
 
       val processor = new Snowflake.Processor(worker)
       val transport = new TNonblockingServerSocket(server_port)
