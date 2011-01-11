@@ -17,11 +17,7 @@ class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
   val sp = "org.scala-tools.testing" % "specs_2.8.0"  % "1.6.5"
   val thrift = "thrift" % "libthrift" % "0.5.0"
   val commonsCodec = "commons-codec" % "commons-codec" % "1.4"
-
   val zookeeperClient = "com.twitter" % "zookeeper-client" % "2.0.0"
-
-  override def mainClass = Some("com.twitter.service.snowflake.SnowflakeServer")
-  override def releaseBuild = true
 
   override def pomExtra =
     <licenses>
