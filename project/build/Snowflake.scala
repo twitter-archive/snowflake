@@ -2,7 +2,7 @@ import sbt._
 import com.twitter.sbt._
 import Process._
 
-class SnowflakeProject(info: ProjectInfo) extends StandardProject(info) {
+class SnowflakeProject(info: ProjectInfo) extends StandardServiceProject(info) {
   val mavenTwttr = "twitter" at "http://maven.twttr.com/"
   val mavenDotOrg = "repo1" at "http://repo1.maven.org/maven2/"
   val jBoss = "jboss-repo" at "http://repository.jboss.org/maven2/"
