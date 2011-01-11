@@ -71,7 +71,7 @@ object SnowflakeServer {
 
       val server = new THsHaServer(processor, transport, serverOpts)
 
-      log.info("Starting server on port %s with workerThreads=%s", port, serverOpts.workerThreads)
+      log.info("Starting server on port %s with workerThreads=%s", server_port, serverOpts.workerThreads)
       server.serve()
     } catch {
       case e: Exception => {
@@ -86,7 +86,7 @@ object SnowflakeServer {
     var tries = 0
     while (true) {
       try {
-        zkClient.create("%s/%s".format(workerIdZkPath, i), (getHostname + ':' + port).getBytes(), EPHEMERAL)
+        zkClient.create("%s/%s".format(workerIdZkPath, i), (getHostname + ':' + server_port).getBytes(), EPHEMERAL)
         return
       } catch {
         case e: NodeExistsException => {
@@ -128,7 +128,7 @@ object SnowflakeServer {
   def sanityCheckPeers() {
     var peerCount = 0
     val timestamps = peers().filter{ case (id: Int, peer: Peer) =>
-      !(peer.hostname == getHostname && peer.port == port)
+      !(peer.hostname == getHostname && peer.port == server_port)
     }.map { case (id: Int, peer: Peer) =>
       try {
         log.info("connecting to %s:%s".format(peer.hostname, peer.port))
