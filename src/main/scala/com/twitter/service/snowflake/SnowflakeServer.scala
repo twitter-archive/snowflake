@@ -54,9 +54,10 @@ object SnowflakeServer {
     }
 
     registerWorkerId(workerId)
-    val port = Configgy.config("admin_http_port").toInt
-    val backlog =  Configgy.config("admin_http_backlog").toInt
-    val admin = new AdminService(port, backlog, new ostrich.RuntimeEnvironment(getClass))
+    val server_port = Configgy.config("snowflake.server_port").toInt
+    val admin_port = Configgy.config("admin_http_port").toInt
+    val admin_backlog =  Configgy.config("admin_http_backlog").toInt
+    val admin = new AdminService(admin_port, admin_backlog, new ostrich.RuntimeEnvironment(getClass))
 
     Thread.sleep(Configgy.config("snowflake.startup_sleep_ms").toLong)
 
@@ -65,7 +66,7 @@ object SnowflakeServer {
       log.info("snowflake.server_port loaded: %s", port)
 
       val processor = new Snowflake.Processor(worker)
-      val transport = new TNonblockingServerSocket(port)
+      val transport = new TNonblockingServerSocket(server_port)
       val serverOpts = new THsHaServer.Options
       serverOpts.workerThreads = Configgy.config("snowflake.thrift-server-threads").toInt
 
