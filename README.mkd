@@ -1,7 +1,5 @@
 # Snowflake
 
-**Warning: this is alpha quality software and subject to dramatic changes until its more stable.**
-
 Snowflake is a network service for generating unique ID numbers at high scale with some simple guarantees.
 
 ## Motivation
