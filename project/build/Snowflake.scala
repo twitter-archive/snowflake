@@ -22,4 +22,12 @@ class SnowflakeProject(info: ProjectInfo) extends StandardServiceProject(info) {
         <distribution>repo</distribution>
       </license>
     </licenses>
+
+  // generate a jar of just the thrift classes.
+    def clientPaths = (mainCompilePath ##) / "com" / "twitter" / "service" / "snowflake" / "gen" ** "*.class"
+    def packageClientAction = packageTask(clientPaths, outputPath, "snowflake-" + version.toString + "-thrift.jar", packageOptions).dependsOn(compile)
+    lazy val packageClient = packageClientAction
+
+    override def packageAction = super.packageAction.dependsOn(packageClientAction)
+    override def artifacts = Set(Artifact("snowflake", "thrift"))
 }
