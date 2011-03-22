@@ -2,7 +2,10 @@ import sbt._
 import com.twitter.sbt._
 import Process._
 
-class SnowflakeProject(info: ProjectInfo) extends StandardServiceProject(info) with CompileThriftJava with CompileThriftRuby with TartifactoryRepos {
+class SnowflakeProject(info: ProjectInfo) extends StandardServiceProject(info) 
+    with CompileThriftJava
+    with CompileThriftRuby
+    with DefaultRepos {
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.5.8"
   val slf4jLog = "org.slf4j" % "slf4j-nop" % "1.5.8"
   val configgy = "net.lag" % "configgy" % "2.0.1"
