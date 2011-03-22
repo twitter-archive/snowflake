@@ -2,7 +2,7 @@ import sbt._
 import com.twitter.sbt._
 import Process._
 
-class SnowflakeProject(info: ProjectInfo) extends StandardServiceProject(info) {
+class SnowflakeProject(info: ProjectInfo) extends StandardServiceProject(info) with CompileThriftJava with CompileThriftRuby {
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.5.8"
   val slf4jLog = "org.slf4j" % "slf4j-log4j12" % "1.5.8"
   val log4j = "apache-log4j" % "log4j" % "1.2.15"
