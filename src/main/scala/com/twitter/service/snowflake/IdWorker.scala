@@ -12,11 +12,12 @@ import java.util.Random
  * we ever want to support multiple worker threads
  * per process
  */
-class IdWorker(workerId: Long, datacenterId: Long) extends Snowflake.Iface {
+class IdWorker(workerId: Long, datacenterId: Long, reporterConfig: ReporterConfig) extends Snowflake.Iface {
   private val log = Logger.get
   private val genCounter = Stats.getCounter("ids_generated")
   private val exceptionCounter = Stats.getCounter("exceptions")
-  private val reporter = new Reporter
+  private val reporter = new Reporter(reporterConfig.scribeCategory, reporterConfig.scribeHost,
+    reporterConfig.scribePort, reporterConfig.scribeSocketTimeout, reporterConfig.flushQueueLimit)
   private val rand = new Random
 
   val twepoch = 1288834974657L

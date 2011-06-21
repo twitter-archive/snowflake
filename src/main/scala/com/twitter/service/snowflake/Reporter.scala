@@ -9,7 +9,6 @@ import java.net.ConnectException
 import java.net.Socket
 import java.util.ArrayList
 import java.util.concurrent.LinkedBlockingDeque
-import net.lag.configgy._
 import net.lag.logging.Logger
 import org.apache.commons.codec.binary.Base64;
 import org.apache.thrift.transport.TIOStreamTransport;
@@ -19,15 +18,11 @@ import org.apache.thrift.protocol.{TBinaryProtocol, TProtocolFactory}
 import org.apache.thrift.transport.{TTransportException, TFramedTransport, TSocket}
 import org.apache.thrift.{TBase, TException, TFieldIdEnum, TSerializer, TDeserializer}
 
-class Reporter {
+class Reporter(scribeCategory: String, scribeHost: String, scribePort: Int, 
+  scribeSocketTimeout: Int, flushQueueLimit: Int) {
   private val log = Logger.get(getClass.getName)
-  private val config = Configgy.config.configMap("snowflake.reporter")
-  private val scribe_category = config("scribe_category")
-  private val scribe_host = config("scribe_host")
-  private val scribe_port = config("scribe_port").toInt
-  private val scribe_socket_timeout = config("scribe_socket_timeout").toInt
 
-  val queue = new LinkedBlockingDeque[TBase[_,_]](config("flush_queue_limit").toInt)
+  val queue = new LinkedBlockingDeque[TBase[_,_]](flushQueueLimit)
   private val structs = new ArrayList[TBase[_,_]](100)
   private val entries = new ArrayList[LogEntry](100)
   private var scribeClient: Option[Client] = None
@@ -45,7 +40,7 @@ class Reporter {
         queue.drainTo(structs, 100)
         if (structs.size > 0) {
           for (i <- 0 until structs.size) {
-            entries.add(i, new LogEntry(scribe_category, serialize(structs.get(i))))
+            entries.add(i, new LogEntry(scribeCategory, serialize(structs.get(i))))
           }
           scribeClient.get.Log(entries)
           log.trace("reported %d items to scribe. queue is %d".format(entries.size, queue.size))
@@ -79,8 +74,8 @@ class Reporter {
     private def connect {
       while(scribeClient.isEmpty) {
         try {
-          log.debug("connection to scribe at %s:%d with timeout %d".format(scribe_host, scribe_port, scribe_socket_timeout))
-          var sock = new TSocket(scribe_host, scribe_port, scribe_socket_timeout)
+          log.debug("connection to scribe at %s:%d with timeout %d".format(scribeHost, scribePort, scribeSocketTimeout))
+          var sock = new TSocket(scribeHost, scribePort, scribeSocketTimeout)
           sock.open()
           var transport = new TFramedTransport(sock)
           var protocol = new TBinaryProtocol(transport, false, false)
