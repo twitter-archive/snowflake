@@ -4,7 +4,6 @@ import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import org.specs._
 
 class IdWorkerSpec extends Specification {
-  Configgy.configure("config/test.conf")
   val workerMask     = 0x000000000001F000L
   val datacenterMask = 0x00000000003E0000L
   val timestampMask  = 0xFFFFFFFFFFC00000L

@@ -1,10 +1,10 @@
 import com.twitter.service.snowflake.{SnowflakeConfig, ReporterConfig}
 
 new SnowflakeConfig {
-  val serverPort = 7609
+  val serverPort = 7610
   val datacenterId = 0
-  val workerId = 0
-  val adminPort = 9990
+  val workerId = 1
+  val adminPort = 9991
   val adminBacklog = 100
   val workerIdZkPath = "/snowflake-servers"
   val zkHostlist = "localhost"
