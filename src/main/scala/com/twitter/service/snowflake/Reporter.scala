@@ -1,8 +1,8 @@
 /** Copyright 2010 Twitter, Inc.*/
 package com.twitter.service.snowflake
 
-import com.twitter.ostrich.BackgroundProcess
-import com.twitter.ostrich.Stats
+import com.twitter.ostrich.admin.BackgroundProcess
+import com.twitter.ostrich.stats.Stats
 import com.twitter.service.snowflake.gen.AuditLogEntry
 import java.io.ByteArrayOutputStream
 import java.net.ConnectException
@@ -34,7 +34,7 @@ class Reporter {
   private val baos = new ByteArrayOutputStream
   private val protocol = (new TBinaryProtocol.Factory).getProtocol(new TIOStreamTransport(baos))
 
-  Stats.makeGauge("reporter_flush_queue") { queue.size() }
+  Stats.addGauge("reporter_flush_queue") { queue.size() }
   val enqueueFailuresCounter = Stats.getCounter("scribe_enqueue_failures")
   val exceptionCounter = Stats.getCounter("exceptions")
 
@@ -131,6 +131,6 @@ class Reporter {
   }
 
   override def finalize() {
-    thread.stop
+    thread.shutdown
   }
 }

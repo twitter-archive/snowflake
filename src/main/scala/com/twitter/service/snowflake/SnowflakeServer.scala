@@ -7,7 +7,6 @@ import org.apache.thrift.{TException, TProcessor, TProcessorFactory}
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol, TProtocolFactory}
 import org.apache.thrift.transport._
 import org.apache.thrift.server.{THsHaServer, TServer}
-import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
 import com.twitter.zookeeper.ZooKeeperClient
 import org.apache.zookeeper.ZooDefs.Ids
@@ -17,29 +16,59 @@ import org.apache.zookeeper.{KeeperException, CreateMode, Watcher, WatchedEvent}
 import org.apache.zookeeper.KeeperException.NodeExistsException
 import scala.collection.mutable
 import java.net.InetAddress
-import com.twitter.ostrich
-import com.twitter.ostrich.Stats
+import com.twitter.ostrich.admin.RuntimeEnvironment
+import com.twitter.ostrich.stats.Stats
+import com.twitter.ostrich.admin.config.ServerConfig
+import com.twitter.ostrich.admin.Service
+
+trait SnowflakeConfig extends ServerConfig[SnowflakeServer] {
+  val serverPort: Int
+  val datacenterId: Int
+  val workerId: Int
+  val adminHttpPort: Int
+  val adminHttpBacklog: Int
+  val workerIdZkPath: String
+  val zkHostlist: String
+  val skipSanityChecks: Boolean
+  val startupSleepMs: Int
+  val thriftServerThreads: Int
+
+  def apply(runtime: RuntimeEnvironment) = {
+    new SnowflakeServer(serverPort, datacenterId, workerId, adminHttpPort,
+      adminHttpBacklog, workerIdZkPath, zkHostlist, skipSanityChecks, startupSleepMs,
+      thriftServerThreads)
+  }
+}
 
 case class Peer(hostname: String, port: Int)
 
 object SnowflakeServer {
+   def main(args: Array[String]) {
+    val runtime = new RuntimeEnvironment(this, args)
+    val server = runtime.loadRuntimeConfig[SnowflakeServer]()
+    try {
+      server.start
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        println(e, "Unexpected exception: %s", e.getMessage)
+        System.exit(0)
+    }
+  } 
+}
+
+class SnowflakeServer(serverPort: Int, datacenterId: Int, workerId: Int, adminPort: Int,
+  adminBacklog: Int, workerIdZkPath: String, zkHostlist: String, skipSanityChecks: Boolean,
+  startupSleepMs: Int, thriftServerThreads: Int) extends Service {
   private val log = Logger.get
-  val runtime = new RuntimeEnvironment(getClass)
   var server: TServer = null
-  lazy val datacenterId = Configgy.config("snowflake.datacenter_id").toInt
-  lazy val workerId: Int = Configgy.config("snowflake.worker_id").toInt
-  lazy val server_port = Configgy.config("snowflake.server_port").toInt
-  lazy val admin_port = Configgy.config("admin_http_port").toInt
-  lazy val admin_backlog =  Configgy.config("admin_http_backlog").toInt
-  lazy val workerIdZkPath = Configgy.config("snowflake.worker_id_path")
-  lazy val zkHostlist = Configgy.config("zookeeper-client.hostlist").toString
   lazy val zkClient = {
     log.info("Creating ZooKeeper client connected to %s", zkHostlist)
     new ZooKeeperClient(zkHostlist)
   }
 
-  Stats.makeGauge("datacenter_id") { datacenterId }
-  Stats.makeGauge("worker_id") { workerId }
+  Stats.addGauge("datacenter_id") { datacenterId }
+  Stats.addGauge("worker_id") { workerId }
   def shutdown(): Unit = {
     if (server != null) {
       log.info("Shutting down.")
@@ -48,30 +77,26 @@ object SnowflakeServer {
     }
   }
 
-  def main(args: Array[String]) {
-    runtime.load(args)
-
-    if (!Configgy.config("snowflake.skip_sanity_checks").toBoolean) {
+  def start {
+    if (!skipSanityChecks) {
       sanityCheckPeers()
     }
-
     registerWorkerId(workerId)
-    val admin = new AdminService(admin_port, admin_backlog, new ostrich.RuntimeEnvironment(getClass))
+    val admin = new AdminService(adminPort, adminBacklog, new RuntimeEnvironment(getClass))
 
-    Thread.sleep(Configgy.config("snowflake.startup_sleep_ms").toLong)
+    Thread.sleep(startupSleepMs)
 
     try {
       val worker = new IdWorker(workerId, datacenterId)
-      log.info("snowflake.server_port loaded: %s", server_port)
 
       val processor = new Snowflake.Processor(worker)
-      val transport = new TNonblockingServerSocket(server_port)
+      val transport = new TNonblockingServerSocket(serverPort)
       val serverOpts = new THsHaServer.Options
-      serverOpts.workerThreads = Configgy.config("snowflake.thrift-server-threads").toInt
+      serverOpts.workerThreads = thriftServerThreads
 
       val server = new THsHaServer(processor, transport, serverOpts)
 
-      log.info("Starting server on port %s with workerThreads=%s", server_port, serverOpts.workerThreads)
+      log.info("Starting server on port %s with workerThreads=%s", serverPort, serverOpts.workerThreads)
       server.serve()
     } catch {
       case e: Exception => {
@@ -79,6 +104,7 @@ object SnowflakeServer {
         throw e
       }
     }
+
   }
 
   def registerWorkerId(i: Int):Unit = {
@@ -86,7 +112,7 @@ object SnowflakeServer {
     var tries = 0
     while (true) {
       try {
-        zkClient.create("%s/%s".format(workerIdZkPath, i), (getHostname + ':' + server_port).getBytes(), EPHEMERAL)
+        zkClient.create("%s/%s".format(workerIdZkPath, i), (getHostname + ':' + serverPort).getBytes(), EPHEMERAL)
         return
       } catch {
         case e: NodeExistsException => {
@@ -128,7 +154,7 @@ object SnowflakeServer {
   def sanityCheckPeers() {
     var peerCount = 0
     val timestamps = peers().filter{ case (id: Int, peer: Peer) =>
-      !(peer.hostname == getHostname && peer.port == server_port)
+      !(peer.hostname == getHostname && peer.port == serverPort)
     }.map { case (id: Int, peer: Peer) =>
       try {
         log.info("connecting to %s:%s".format(peer.hostname, peer.port))

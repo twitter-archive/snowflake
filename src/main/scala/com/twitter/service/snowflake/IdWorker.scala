@@ -1,7 +1,7 @@
 /** Copyright 2010 Twitter, Inc.*/
 package com.twitter.service.snowflake
 
-import com.twitter.ostrich.Stats
+import com.twitter.ostrich.stats.Stats
 import com.twitter.service.snowflake.gen._
 import net.lag.logging.Logger
 import java.util.Random
