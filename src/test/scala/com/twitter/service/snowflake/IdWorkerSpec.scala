@@ -2,6 +2,7 @@ package com.twitter.service.snowflake
 
 import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import org.specs._
+import com.twitter.logging.Logger
 
 class IdWorkerSpec extends Specification {
   val workerMask     = 0x000000000001F000L

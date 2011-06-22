@@ -7,7 +7,6 @@ import org.apache.thrift.{TException, TProcessor, TProcessorFactory}
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol, TProtocolFactory}
 import org.apache.thrift.transport._
 import org.apache.thrift.server.{THsHaServer, TServer}
-import net.lag.logging.Logger
 import com.twitter.zookeeper.ZooKeeperClient
 import org.apache.zookeeper.ZooDefs.Ids
 import org.apache.zookeeper.data.{ACL, Id}
@@ -20,6 +19,8 @@ import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.ostrich.stats.Stats
 import com.twitter.ostrich.admin.config.ServerConfig
 import com.twitter.ostrich.admin.Service
+import com.twitter.logging.Logger
+import com.twitter.logging.config.LoggerConfig
 
 trait ReporterConfig {
   val scribeCategory: String
@@ -42,6 +43,8 @@ trait SnowflakeConfig extends ServerConfig[SnowflakeServer] {
   val thriftServerThreads: Int
 
   val reporterConfig: ReporterConfig
+
+  val loggerConfig: LoggerConfig
 
   def apply(runtime: RuntimeEnvironment) = {
     new SnowflakeServer(this)
@@ -68,7 +71,9 @@ object SnowflakeServer {
 }
 
 class SnowflakeServer(config: SnowflakeConfig) extends Service {
+  Logger.configure(List(config.loggerConfig))
   private val log = Logger.get
+
   var server: TServer = null
   lazy val zkClient = {
     log.info("Creating ZooKeeper client connected to %s", config.zkHostlist)

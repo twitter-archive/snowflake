@@ -3,17 +3,16 @@ package com.twitter.service.snowflake.client
 
 import com.twitter.service.snowflake.gen.Snowflake
 import com.twitter.service.snowflake.gen.Snowflake.Client
-import net.lag.configgy.{Config, Configgy}
-import net.lag.logging.Logger
 import org.apache.commons.pool.impl.{GenericObjectPool, StackKeyedObjectPoolFactory}
 import org.apache.commons.pool.BasePoolableObjectFactory
 import org.apache.thrift.transport.TTransport
 import java.util.concurrent.ConcurrentHashMap
+import com.twitter.logging.Logger
 
 
 object ConnectionPool {
   private val poolMap: ConcurrentHashMap[String, ConnectionPool] = new ConcurrentHashMap[String, ConnectionPool]()
-  private val log = Logger.get
+  private val log = Logger.get //TODO thread this in
 
   def clear() {
     poolMap.clear()
@@ -45,7 +44,6 @@ object ConnectionPool {
   private def makeKey(hostname: String, port: Int): String = "%s:%d".format(hostname, port)
 }
 
-
 class ThriftConnectionFactory(hostname: String, port: Int) extends BasePoolableObjectFactory {
   private val log = Logger.get
   // for makeObject we'll simply return a new buffer
@@ -70,33 +68,11 @@ class ThriftConnectionFactory(hostname: String, port: Int) extends BasePoolableO
   }
 }
 
-
 class ConnectionPool(hostname: String, port: Int) {
   private val log = Logger.get
 
   def getObjectPoolConfig: GenericObjectPool.Config = {
     val config = new GenericObjectPool.Config
-    config.maxActive = Configgy.config("thrift.max-concurrent-conns").toInt
-    log.info("config.maxActive: %s", config.maxActive)
-
-    config.maxIdle = Configgy.config("thrift.max-idle-conns").toInt
-    log.info("config.maxIdle: %s", config.maxIdle)
-
-    config.minIdle = Configgy.config("thrift.min-idle-conns").toInt
-    log.info("config.minIdle: %s", config.minIdle)
-
-    config.maxWait = Configgy.config("thrift.max-wait").toLong
-    log.info("config.maxWait: %s", config.maxWait)
-
-    config.timeBetweenEvictionRunsMillis = Configgy.config("thrift.time-between-eviction-runs-ms").toLong
-    log.info("config.timeBetweenEvictionRunsMillis: %s", config.timeBetweenEvictionRunsMillis)
-
-    config.minEvictableIdleTimeMillis = Configgy.config("thrift.min-evictable-idle-time-ms").toLong
-    log.info("config.minEvictableIdleTimeMillis: %s", config.minEvictableIdleTimeMillis)
-
-    config.whenExhaustedAction = GenericObjectPool.WHEN_EXHAUSTED_FAIL
-    log.info("set configuration options for GenericObjectPool")
-
     config
   }
 

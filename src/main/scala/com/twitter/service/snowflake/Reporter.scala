@@ -9,7 +9,6 @@ import java.net.ConnectException
 import java.net.Socket
 import java.util.ArrayList
 import java.util.concurrent.LinkedBlockingDeque
-import net.lag.logging.Logger
 import org.apache.commons.codec.binary.Base64;
 import org.apache.thrift.transport.TIOStreamTransport;
 import org.apache.scribe.LogEntry
@@ -17,11 +16,11 @@ import org.apache.scribe.scribe.Client
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocolFactory}
 import org.apache.thrift.transport.{TTransportException, TFramedTransport, TSocket}
 import org.apache.thrift.{TBase, TException, TFieldIdEnum, TSerializer, TDeserializer}
+import com.twitter.logging.Logger
 
 class Reporter(scribeCategory: String, scribeHost: String, scribePort: Int, 
   scribeSocketTimeout: Int, flushQueueLimit: Int) {
-  private val log = Logger.get(getClass.getName)
-
+  private val log = Logger.get
   val queue = new LinkedBlockingDeque[TBase[_,_]](flushQueueLimit)
   private val structs = new ArrayList[TBase[_,_]](100)
   private val entries = new ArrayList[LogEntry](100)

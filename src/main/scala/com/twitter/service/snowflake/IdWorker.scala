@@ -3,8 +3,8 @@ package com.twitter.service.snowflake
 
 import com.twitter.ostrich.stats.Stats
 import com.twitter.service.snowflake.gen._
-import net.lag.logging.Logger
 import java.util.Random
+import com.twitter.logging.Logger
 
 /**
  * An object that generates IDs.
@@ -13,11 +13,11 @@ import java.util.Random
  * per process
  */
 class IdWorker(workerId: Long, datacenterId: Long, reporterConfig: ReporterConfig) extends Snowflake.Iface {
-  private val log = Logger.get
   private val genCounter = Stats.getCounter("ids_generated")
   private val exceptionCounter = Stats.getCounter("exceptions")
   private val reporter = new Reporter(reporterConfig.scribeCategory, reporterConfig.scribeHost,
     reporterConfig.scribePort, reporterConfig.scribeSocketTimeout, reporterConfig.flushQueueLimit)
+  private val log = Logger.get
   private val rand = new Random
 
   val twepoch = 1288834974657L

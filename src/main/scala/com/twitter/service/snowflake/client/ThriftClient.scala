@@ -5,9 +5,8 @@ import org.apache.thrift.TException
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.transport.{TFramedTransport, TSocket, TTransport, TTransportException}
 import com.twitter.service.snowflake.gen.Snowflake
-import net.lag.configgy.ConfigMap
-import net.lag.logging.Logger
 import scala.reflect.Manifest
+import com.twitter.logging.Logger
 
 /**
  * T is expected to be your thrift-generated Client class. Example: Snowflake.Client
@@ -19,7 +18,7 @@ class ThriftClient[T](implicit man: Manifest[T]) {
     constructor.newInstance(protocol).asInstanceOf[T]
   }
 
-  val log = Logger.get
+  val log = Logger.get //FIXME
   /**
    * @param soTimeoutMS the Socket timeout for both connect and read.
    */
