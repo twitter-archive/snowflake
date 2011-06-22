@@ -2,7 +2,7 @@ import sbt._
 import com.twitter.sbt._
 import Process._
 
-class SnowflakeProject(info: ProjectInfo) extends StandardServiceProject(info) {
+class SnowflakeProject(info: ProjectInfo) extends StandardServiceProject(info) with DefaultRepos with CompileThriftJava {
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.5.8"
   val slf4jLog = "org.slf4j" % "slf4j-nop" % "1.5.8"
   val commonsPool = "commons-pool" % "commons-pool" % "1.5.4"
