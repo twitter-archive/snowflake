@@ -1,4 +1,4 @@
-/* Copyright 2010 Twitter, Inc. */
+/* Copyright 2010-2011 Twitter, Inc. */
 namespace java com.twitter.service.snowflake.gen
 
 exception InvalidSystemClock {

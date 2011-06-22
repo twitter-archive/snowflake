@@ -1,4 +1,4 @@
-/** Copyright 2010 Twitter, Inc.*/
+/** Copyright 2010-2011 Twitter, Inc.*/
 package com.twitter.service.snowflake
 
 import com.twitter.ostrich.admin.BackgroundProcess
