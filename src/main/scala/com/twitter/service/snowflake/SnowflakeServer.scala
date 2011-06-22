@@ -44,8 +44,6 @@ trait SnowflakeConfig extends ServerConfig[SnowflakeServer] {
 
   val reporterConfig: ReporterConfig
 
-  val loggerConfig: LoggerConfig
-
   def apply(runtime: RuntimeEnvironment) = {
     new SnowflakeServer(this)
   }
@@ -55,9 +53,7 @@ case class Peer(hostname: String, port: Int)
 
 object SnowflakeServer {
    def main(args: Array[String]) {
-     val runtime = new RuntimeEnvironment(this)
-     runtime.parseArgs(args.toList)
-
+     val runtime = RuntimeEnvironment(this, args)
      val server = runtime.loadRuntimeConfig[SnowflakeServer]()
      try {
        server.start
@@ -71,7 +67,6 @@ object SnowflakeServer {
 }
 
 class SnowflakeServer(config: SnowflakeConfig) extends Service {
-  Logger.configure(List(config.loggerConfig))
   private val log = Logger.get
 
   var server: TServer = null

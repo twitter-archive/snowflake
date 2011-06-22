@@ -1,4 +1,6 @@
 import com.twitter.service.snowflake.{SnowflakeConfig, ReporterConfig}
+import com.twitter.logging.config.{LoggerConfig, FileHandlerConfig}
+import com.twitter.logging.Logger
 
 new SnowflakeConfig {
   val serverPort = 7610
@@ -19,4 +21,12 @@ new SnowflakeConfig {
     val scribeSocketTimeout = 5000
     val flushQueueLimit = 100000
   }
+
+  loggers = new LoggerConfig {
+    handlers = new FileHandlerConfig {
+      filename = "snowflake2.log"
+      level = Logger.TRACE
+    }
+  }
+
 }

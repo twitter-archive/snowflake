@@ -22,10 +22,11 @@ new SnowflakeConfig {
     val flushQueueLimit = 100000
   }
 
-  val loggerConfig = new LoggerConfig {
-    handlers = new FileHandlerConfig {
-      filename = "snowflake.log"
-      level = Level.TRACE
-    }
+  loggers = new LoggerConfig {
+      level = Level.DEBUG
+      handlers = new FileHandlerConfig {
+        level = Level.TRACE
+        filename = "snowflake.log"
+      }
   }
 }
