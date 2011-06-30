@@ -68,7 +68,6 @@ object SnowflakeServer {
 
 class SnowflakeServer(config: SnowflakeConfig) extends Service {
   private val log = Logger.get
-
   var server: TServer = null
   lazy val zkClient = {
     log.info("Creating ZooKeeper client connected to %s", config.zkHostlist)

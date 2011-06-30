@@ -1,6 +1,5 @@
 package com.twitter.service.snowflake
 
-import net.lag.configgy.{Config, Configgy, RuntimeEnvironment}
 import org.specs._
 import com.twitter.logging.Logger
 
