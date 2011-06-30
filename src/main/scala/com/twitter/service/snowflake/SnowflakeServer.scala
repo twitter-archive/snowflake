@@ -22,32 +22,6 @@ import com.twitter.ostrich.admin.Service
 import com.twitter.logging.Logger
 import com.twitter.logging.config.LoggerConfig
 
-trait ReporterConfig {
-  val scribeCategory: String
-  val scribeHost: String
-  val scribePort: Int
-  val scribeSocketTimeout: Int
-  val flushQueueLimit: Int
-}
-
-trait SnowflakeConfig extends ServerConfig[SnowflakeServer] {
-  val serverPort: Int
-  val datacenterId: Int
-  val workerId: Int
-  val adminPort: Int
-  val adminBacklog: Int
-  val workerIdZkPath: String
-  val zkHostlist: String
-  val skipSanityChecks: Boolean
-  val startupSleepMs: Int
-  val thriftServerThreads: Int
-
-  val reporterConfig: ReporterConfig
-
-  def apply(runtime: RuntimeEnvironment) = {
-    new SnowflakeServer(this)
-  }
-}
 
 case class Peer(hostname: String, port: Int)
 
