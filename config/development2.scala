@@ -1,6 +1,7 @@
 import com.twitter.service.snowflake.{SnowflakeConfig, ReporterConfig}
 import com.twitter.logging.config.{LoggerConfig, FileHandlerConfig}
 import com.twitter.logging.Logger
+import com.twitter.zookeeper.ZookeeperClientConfig
 
 new SnowflakeConfig {
   val serverPort = 7610
@@ -9,10 +10,13 @@ new SnowflakeConfig {
   val adminPort = 9991
   val adminBacklog = 100
   val workerIdZkPath = "/snowflake-servers"
-  val zkHostlist = "localhost"
   val skipSanityChecks = false
   val startupSleepMs = 10000
   val thriftServerThreads = 2
+
+  val zookeeperClientConfig = new ZookeeperClientConfig {
+    val hostList = "localhost"
+  }
 
   val reporterConfig = new ReporterConfig {
     val scribeCategory = "snowflake"

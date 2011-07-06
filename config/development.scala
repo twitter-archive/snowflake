@@ -1,6 +1,7 @@
 import com.twitter.service.snowflake.{SnowflakeConfig, ReporterConfig}
 import com.twitter.logging.config.{LoggerConfig, FileHandlerConfig}
 import com.twitter.logging.Level
+import com.twitter.zookeeper.ZookeeperClientConfig
 
 new SnowflakeConfig {
   val serverPort = 7609
@@ -9,10 +10,13 @@ new SnowflakeConfig {
   val adminPort = 9990
   val adminBacklog = 100
   val workerIdZkPath = "/snowflake-servers"
-  val zkHostlist = "localhost"
   val skipSanityChecks = false
   val startupSleepMs = 10000
   val thriftServerThreads = 2
+
+  val zookeeperClientConfig = new ZookeeperClientConfig {
+    val hostList = "localhost"
+  }
 
   val reporterConfig = new ReporterConfig {
     val scribeCategory = "snowflake"
@@ -23,10 +27,9 @@ new SnowflakeConfig {
   }
 
   loggers = new LoggerConfig {
-      level = Level.DEBUG
-      handlers = new FileHandlerConfig {
-        level = Level.TRACE
-        filename = "snowflake.log"
-      }
+    handlers = new FileHandlerConfig {
+      level = Level.TRACE
+      filename = "snowflake.log"
+    }
   }
 }
