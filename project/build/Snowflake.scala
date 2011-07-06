@@ -8,7 +8,6 @@ class SnowflakeProject(info: ProjectInfo) extends StandardServiceProject(info)
   with NoisyDependencies {
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.5.8"
   val slf4jLog = "org.slf4j" % "slf4j-nop" % "1.5.8"
-  val commonsPool = "commons-pool" % "commons-pool" % "1.5.4"
   val ostrich = "com.twitter" % "ostrich" % "4.4.0"
   val sp = "org.scala-tools.testing" % "specs_2.8.0"  % "1.6.5"
   val thrift = "thrift" % "libthrift" % "0.5.0"
