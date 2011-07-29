@@ -12,8 +12,8 @@ class SnowflakeProject(info: ProjectInfo) extends StandardServiceProject(info)
   val sp = "org.scala-tools.testing" % "specs_2.8.0"  % "1.6.5"
   val thrift = "thrift" % "libthrift" % "0.5.0"
   val commonsCodec = "commons-codec" % "commons-codec" % "1.4"
-  val zookeeperClient = "com.twitter" % "zookeeper-client" % "3.0.0"
-  val utilLogging = "com.twitter" % "util-logging" % "1.8.18"
+  val zookeeperClient = "com.twitter" % "zookeeper-client" % "3.0.1"
+  val utilLogging = "com.twitter" % "util-logging" % "1.10.2"
 
   override def ivyXML =
     <dependencies>
