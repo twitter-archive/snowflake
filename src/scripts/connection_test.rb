@@ -1,4 +1,4 @@
-#!/usr/bin/ruby 
+#!/usr/bin/ruby
 require 'rubygems'
 require 'thrift_client'
 require 'snowflake'
