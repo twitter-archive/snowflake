@@ -1,9 +1,15 @@
 package com.twitter.service.snowflake
 
-trait ReporterConfig {
-  val scribeCategory: String
-  val scribeHost: String
-  val scribePort: Int
-  val scribeSocketTimeout: Int
-  val flushQueueLimit: Int
+import com.twitter.util.Config
+
+trait ReporterConfig extends Config[Reporter] {
+  var scribeCategory = "snowflake"
+  var scribeHost = "localhost"
+  var scribePort =  1463
+  var scribeSocketTimeout =  5000
+  var flushQueueLimit = 100000
+
+  def apply = {
+    new Reporter(scribeCategory, scribeHost, scribePort, scribeSocketTimeout, flushQueueLimit)
+  }
 }

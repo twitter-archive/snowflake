@@ -17,7 +17,6 @@ import scala.collection.mutable
 import java.net.InetAddress
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.ostrich.stats.Stats
-import com.twitter.ostrich.admin.config.ServerConfig
 import com.twitter.ostrich.admin.Service
 import com.twitter.logging.Logger
 import com.twitter.logging.config.LoggerConfig
@@ -40,16 +39,16 @@ object SnowflakeServer {
    }
 }
 
-class SnowflakeServer(config: SnowflakeConfig) extends Service {
+// NOTE: this is a bit unweildy. If we start using it in more than one place we should refactor
+class SnowflakeServer(serverPort: Int, datacenterId: Int, workerId: Int, adminPort: Int,
+    adminBacklog: Int, workerIdZkPath: String, skipSanityChecks: Boolean, startupSleepMs: Int,
+    thriftServerThreads: Int, reporter: Reporter, zkClient: ZooKeeperClient) extends Service {
+
   private val log = Logger.get
   var server: TServer = null
-  lazy val zkClient = {
-    log.info("Creating ZooKeeper client connected to %s", config.zookeeperClientConfig.hostList)
-    new ZooKeeperClient(config.zookeeperClientConfig)
-  }
 
-  Stats.addGauge("datacenter_id") { config.datacenterId }
-  Stats.addGauge("worker_id") { config.workerId }
+  Stats.addGauge("datacenter_id") { datacenterId }
+  Stats.addGauge("worker_id") { workerId }
 
   def shutdown(): Unit = {
     if (server != null) {
@@ -60,26 +59,27 @@ class SnowflakeServer(config: SnowflakeConfig) extends Service {
   }
 
   def start {
-    if (!config.skipSanityChecks) {
+    if (!skipSanityChecks) {
       sanityCheckPeers()
     }
 
-    registerWorkerId(config.workerId)
-    val admin = new AdminService(config.adminPort, config.adminBacklog, new RuntimeEnvironment(getClass))
+    registerWorkerId(workerId)
+    // TODO: move to config application
+    val admin = new AdminService(adminPort, adminBacklog, new RuntimeEnvironment(getClass))
 
-    Thread.sleep(config.startupSleepMs)
+    Thread.sleep(startupSleepMs)
 
     try {
-      val worker = new IdWorker(config.workerId, config.datacenterId, config.reporterConfig)
+      val worker = new IdWorker(workerId, datacenterId, reporter)
 
       val processor = new Snowflake.Processor(worker)
-      val transport = new TNonblockingServerSocket(config.serverPort)
+      val transport = new TNonblockingServerSocket(serverPort)
       val serverOpts = new THsHaServer.Options
-      serverOpts.workerThreads = config.thriftServerThreads
+      serverOpts.workerThreads = thriftServerThreads
 
       val server = new THsHaServer(processor, transport, serverOpts)
 
-      log.info("Starting server on port %s with workerThreads=%s", config.serverPort, serverOpts.workerThreads)
+      log.info("Starting server on port %s with workerThreads=%s", serverPort, serverOpts.workerThreads)
       server.serve()
     } catch {
       case e: Exception => {
@@ -94,8 +94,8 @@ class SnowflakeServer(config: SnowflakeConfig) extends Service {
     var tries = 0
     while (true) {
       try {
-        zkClient.create("%s/%s".format(config.workerIdZkPath, i), 
-          (getHostname + ':' + config.serverPort).getBytes(), EPHEMERAL)
+        zkClient.create("%s/%s".format(workerIdZkPath, i),
+          (getHostname + ':' + serverPort).getBytes(), EPHEMERAL)
         return
       } catch {
         case e: NodeExistsException => {
@@ -115,17 +115,17 @@ class SnowflakeServer(config: SnowflakeConfig) extends Service {
   def peers(): mutable.HashMap[Int, Peer] = {
     var peerMap = new mutable.HashMap[Int, Peer]
     try {
-      zkClient.get(config.workerIdZkPath)
+      zkClient.get(workerIdZkPath)
     } catch {
       case _ => {
-        log.info("%s missing, trying to create it", config.workerIdZkPath)
-        zkClient.create(config.workerIdZkPath, Array(), PERSISTENT)
+        log.info("%s missing, trying to create it", workerIdZkPath)
+        zkClient.create(workerIdZkPath, Array(), PERSISTENT)
       }
     }
 
-    val children = zkClient.getChildren(config.workerIdZkPath)
+    val children = zkClient.getChildren(workerIdZkPath)
     children.foreach { i =>
-      val peer = zkClient.get("%s/%s".format(config.workerIdZkPath, i))
+      val peer = zkClient.get("%s/%s".format(workerIdZkPath, i))
       val list = new String(peer).split(':')
       peerMap(i.toInt) = new Peer(new String(list(0)), list(1).toInt)
     }
@@ -137,7 +137,7 @@ class SnowflakeServer(config: SnowflakeConfig) extends Service {
   def sanityCheckPeers() {
     var peerCount = 0
     val timestamps = peers().filter{ case (id: Int, peer: Peer) =>
-      !(peer.hostname == getHostname && peer.port == config.serverPort)
+      !(peer.hostname == getHostname && peer.port == serverPort)
     }.map { case (id: Int, peer: Peer) =>
       try {
         log.info("connecting to %s:%s".format(peer.hostname, peer.port))
@@ -149,9 +149,9 @@ class SnowflakeServer(config: SnowflakeConfig) extends Service {
         }
 
         val reportedDatacenterId = c.get_datacenter_id()
-        if (reportedDatacenterId != config.datacenterId) {
-          log.error("Worker at %s:%s has datacenter_id %d, but ours is %d", 
-            peer.hostname, peer.port, reportedDatacenterId, config.datacenterId)
+        if (reportedDatacenterId != datacenterId) {
+          log.error("Worker at %s:%s has datacenter_id %d, but ours is %d",
+            peer.hostname, peer.port, reportedDatacenterId, datacenterId)
           throw new IllegalStateException("Datacenter id insanity.")
         }
 
@@ -159,7 +159,7 @@ class SnowflakeServer(config: SnowflakeConfig) extends Service {
         c.get_timestamp().toLong
       } catch {
         case e: TTransportException => {
-          log.error("Couldn't talk to peer %s at %s:%s", config.workerId, peer.hostname, peer.port)
+          log.error("Couldn't talk to peer %s at %s:%s", workerId, peer.hostname, peer.port)
           throw e
         }
       }

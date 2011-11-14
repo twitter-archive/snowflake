@@ -8,25 +8,25 @@ class IdWorkerSpec extends Specification {
   val datacenterMask = 0x00000000003E0000L
   val timestampMask  = 0xFFFFFFFFFFC00000L
 
-  val reporterConfig = new ReporterConfig {
-    val scribeCategory = "snowflake"
-    val scribeHost = "localhost"
-    val scribePort = 1463
-    val scribeSocketTimeout = 5000
-    val flushQueueLimit = 100000
-  }
+  val reporter = new ReporterConfig {
+    scribeCategory = "snowflake"
+    scribeHost = "localhost"
+    scribePort = 1463
+    scribeSocketTimeout = 5000
+    flushQueueLimit = 100000
+  }.apply()
 
 
-  class EasyTimeWorker(workerId: Long, datacenterId: Long, reporterConfig: ReporterConfig)
-    extends IdWorker(workerId, datacenterId, reporterConfig) {
+  class EasyTimeWorker(workerId: Long, datacenterId: Long, reporter: Reporter)
+    extends IdWorker(workerId, datacenterId, reporter) {
     var timeMaker = (() => System.currentTimeMillis)
     override def timeGen(): Long = {
       timeMaker()
     }
   }
 
-  class WakingIdWorker(workerId: Long, datacenterId: Long, reporterConfig: ReporterConfig)
-    extends EasyTimeWorker(workerId, datacenterId, reporterConfig) {
+  class WakingIdWorker(workerId: Long, datacenterId: Long, reporter: Reporter)
+    extends EasyTimeWorker(workerId, datacenterId, reporter) {
     var slept = 0
     override def tilNextMillis(lastTimestamp:Long): Long = {
       slept += 1
@@ -37,31 +37,31 @@ class IdWorkerSpec extends Specification {
   "IdWorker" should {
 
     "generate an id" in {
-      val s = new IdWorker(1, 1, reporterConfig)
+      val s = new IdWorker(1, 1, reporter)
       val id: Long = s.nextId()
       id must be_>(0L)
     }
 
     "return an accurate timestamp" in {
-      val s = new IdWorker(1, 1, reporterConfig)
+      val s = new IdWorker(1, 1, reporter)
       val t = System.currentTimeMillis
       (s.get_timestamp() - t) must be_<(50L)
     }
 
     "return the correct job id" in {
-      val s = new IdWorker(1, 1, reporterConfig)
+      val s = new IdWorker(1, 1, reporter)
       s.get_worker_id() must be_==(1L)
     }
 
     "return the correct dc id" in {
-      val s = new IdWorker(1, 1, reporterConfig)
+      val s = new IdWorker(1, 1, reporter)
       s.get_datacenter_id() must be_==(1L)
     }
 
     "properly mask worker id" in {
       val workerId = 0x1F
       val datacenterId = 0
-      val worker = new IdWorker(workerId, datacenterId, reporterConfig)
+      val worker = new IdWorker(workerId, datacenterId, reporter)
       for (i <- 1 to 1000) {
         val id = worker.nextId
         ((id & workerMask) >> 12) must be_==(workerId)
@@ -71,13 +71,13 @@ class IdWorkerSpec extends Specification {
     "properly mask dc id" in {
       val workerId = 0
       val datacenterId = 0x1F
-      val worker = new IdWorker(workerId, datacenterId, reporterConfig)
+      val worker = new IdWorker(workerId, datacenterId, reporter)
       val id = worker.nextId
       ((id & datacenterMask) >> 17) must be_==(datacenterId)
     }
 
     "properly mask timestamp" in {
-      val worker = new EasyTimeWorker(31, 31, reporterConfig)
+      val worker = new EasyTimeWorker(31, 31, reporter)
       for (i <- 1 to 100) {
         val t = System.currentTimeMillis
         worker.timeMaker = (() => t)
@@ -90,7 +90,7 @@ class IdWorkerSpec extends Specification {
       // put a zero in the low bit so we can detect overflow from the sequence
       val workerId = 4
       val datacenterId = 4
-      val worker = new IdWorker(workerId, datacenterId, reporterConfig)
+      val worker = new IdWorker(workerId, datacenterId, reporter)
       val startSequence = 0xFFFFFF-20
       val endSequence = 0xFFFFFF+20
       worker.sequence = startSequence
@@ -102,7 +102,7 @@ class IdWorkerSpec extends Specification {
     }
 
     "generate increasing ids" in {
-      val worker = new IdWorker(1, 1, reporterConfig)
+      val worker = new IdWorker(1, 1, reporter)
       var lastId = 0L
       for (i <- 1 to 100) {
         val id = worker.nextId
@@ -112,7 +112,7 @@ class IdWorkerSpec extends Specification {
     }
 
     "generate 1 million ids quickly" in {
-      val worker = new IdWorker(31, 31, reporterConfig)
+      val worker = new IdWorker(31, 31, reporter)
       val t = System.currentTimeMillis
       for (i <- 1 to 1000000) {
         var id = worker.nextId
@@ -125,7 +125,7 @@ class IdWorkerSpec extends Specification {
 
     "sleep if we would rollover twice in the same millisecond" in {
       var queue = new scala.collection.mutable.Queue[Long]()
-      val worker = new WakingIdWorker(1, 1, reporterConfig)
+      val worker = new WakingIdWorker(1, 1, reporter)
       val iter = List(2L, 2L, 3L).iterator
       worker.timeMaker = (() => iter.next)
       worker.sequence = 4095
@@ -136,7 +136,7 @@ class IdWorkerSpec extends Specification {
     }
 
     "generate only unique ids" in {
-      val worker = new IdWorker(31, 31, reporterConfig)
+      val worker = new IdWorker(31, 31, reporter)
       var set = new scala.collection.mutable.HashSet[Long]()
       val n = 2000000
       (1 to n).foreach{i =>
@@ -151,19 +151,19 @@ class IdWorkerSpec extends Specification {
     }
 
     "generate ids over 50 billion" in {
-      val worker = new IdWorker(0, 0, reporterConfig)
+      val worker = new IdWorker(0, 0, reporter)
       worker.nextId must be_>(50000000000L)
     }
   }
 
   "validUseragent" should {
     "accept the simple case" in {
-      val worker = new IdWorker(1, 1, reporterConfig)
+      val worker = new IdWorker(1, 1, reporter)
       worker.validUseragent("infra-dm") must be_==(true);
     }
 
     "reject leading numbers" in {
-      val worker = new IdWorker(1, 1, reporterConfig)
+      val worker = new IdWorker(1, 1, reporter)
       worker.validUseragent("1") must be_==(false)
       worker.validUseragent("1asdf") must be_==(false)
     }
