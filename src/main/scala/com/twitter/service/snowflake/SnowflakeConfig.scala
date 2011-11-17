@@ -11,8 +11,6 @@ trait SnowflakeConfig extends ServerConfig[SnowflakeServer] {
   var serverPort = 7609
   var datacenterId = required[Int]
   var workerIdMap = required[Map[Int, String]]
-  var adminPort = 9990
-  var adminBacklog = 10
   var workerIdZkPath = "/snowflake-servers"
   var skipSanityChecks = false
   var startupSleepMs = 10000
@@ -32,8 +30,8 @@ trait SnowflakeConfig extends ServerConfig[SnowflakeServer] {
 
   def apply(runtime: RuntimeEnvironment) = {
     new SnowflakeServer(serverPort, datacenterId, workerIdFor(InetAddress.getLocalHost),
-        adminPort, adminBacklog, workerIdZkPath, skipSanityChecks, startupSleepMs,
-        thriftServerThreads, reporterConfig(), zookeeperClientConfig())
+        workerIdZkPath, skipSanityChecks, startupSleepMs, thriftServerThreads, reporterConfig(),
+        zookeeperClientConfig())
   }
 
   override def validate = {

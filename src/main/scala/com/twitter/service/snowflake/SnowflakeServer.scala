@@ -39,10 +39,9 @@ object SnowflakeServer {
    }
 }
 
-// NOTE: this is a bit unweildy. If we start using it in more than one place we should refactor
-class SnowflakeServer(serverPort: Int, datacenterId: Int, workerId: Int, adminPort: Int,
-    adminBacklog: Int, workerIdZkPath: String, skipSanityChecks: Boolean, startupSleepMs: Int,
-    thriftServerThreads: Int, reporter: Reporter, zkClient: ZooKeeperClient) extends Service {
+class SnowflakeServer(serverPort: Int, datacenterId: Int, workerId: Int, workerIdZkPath: String,
+    skipSanityChecks: Boolean, startupSleepMs: Int, thriftServerThreads: Int,
+    reporter: Reporter, zkClient: ZooKeeperClient) extends Service {
 
   private val log = Logger.get
   var server: TServer = null
@@ -64,8 +63,6 @@ class SnowflakeServer(serverPort: Int, datacenterId: Int, workerId: Int, adminPo
     }
 
     registerWorkerId(workerId)
-    // TODO: move to config application
-    val admin = new AdminService(adminPort, adminBacklog, new RuntimeEnvironment(getClass))
 
     Thread.sleep(startupSleepMs)
 
