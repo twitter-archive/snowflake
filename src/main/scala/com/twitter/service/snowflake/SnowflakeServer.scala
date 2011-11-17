@@ -99,7 +99,7 @@ class SnowflakeServer(serverPort: Int, datacenterId: Int, workerId: Int, workerI
           if (tries < 2) {
             log.info("Failed to claim worker id. Gonna wait a bit and retry because the node may be from the last time I was running.")
             tries += 1
-            Thread.sleep(30000)
+            Thread.sleep(1000)
           } else {
             throw e
           }
