@@ -5,7 +5,7 @@ import com.twitter.ostrich.admin.config.ServerConfig
 import com.twitter.zookeeper.ZookeeperClientConfig
 import java.net.InetAddress
 import com.twitter.zookeeper.ZookeeperClientConfig
-
+import com.twitter.util.Config.RequiredValuesMissing
 
 trait SnowflakeConfig extends ServerConfig[SnowflakeServer] {
   var serverPort = 7609
@@ -35,8 +35,10 @@ trait SnowflakeConfig extends ServerConfig[SnowflakeServer] {
   }
 
   override def validate = {
+    if (workerIdMap.values.size != workerIdMap.values.toSet.size)
+      throw new RequiredValuesMissing("duplicate worker Ids")
     zookeeperClientConfig.validate
-    reporterConfig.validate
+    reporterConfig.validate 
     super.validate
   }
 }
