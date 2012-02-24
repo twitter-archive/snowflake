@@ -2,6 +2,7 @@ package com.twitter.service.snowflake
 
 import org.specs._
 import com.twitter.logging.Logger
+import com.twitter.service.snowflake.gen.InvalidSystemClock
 
 class IdWorkerSpec extends Specification {
   val workerMask     = 0x000000000001F000L
@@ -15,7 +16,6 @@ class IdWorkerSpec extends Specification {
     scribeSocketTimeout = 5000
     flushQueueLimit = 100000
   }.apply()
-
 
   class EasyTimeWorker(workerId: Long, datacenterId: Long, reporter: Reporter)
     extends IdWorker(workerId, datacenterId, reporter) {
@@ -32,6 +32,14 @@ class IdWorkerSpec extends Specification {
       slept += 1
       super.tilNextMillis(lastTimestamp)
     }
+  }
+
+  class StaticTimeWorker(workerId: Long, datacenterId: Long, reporter: Reporter)
+    extends IdWorker(workerId, datacenterId, reporter) {
+
+    var time = 1L
+
+    override def timeGen = time + twepoch
   }
 
   "IdWorker" should {
@@ -153,6 +161,38 @@ class IdWorkerSpec extends Specification {
     "generate ids over 50 billion" in {
       val worker = new IdWorker(0, 0, reporter)
       worker.nextId must be_>(50000000000L)
+    }
+
+    "generate only unique ids, even when time goes backwards" in {
+      val sequenceMask = -1L ^ (-1L << 12)
+      val worker = new StaticTimeWorker(0, 0, reporter)
+
+      // reported at https://github.com/twitter/snowflake/issues/6
+      // first we generate 2 ids with the same time, so that we get the sequqence to 1
+      worker.sequence must be_==(0)
+      worker.time     must be_==(1)
+      val id1 = worker.nextId
+      (id1 >> 22) must be_==(1)
+      (id1 & sequenceMask) must be_==(0)
+
+      worker.sequence must be_==(0)
+      worker.time     must be_==(1)
+      val id2 = worker.nextId
+      (id2 >> 22) must be_==(1)
+      (id2 & sequenceMask) must be_==(1)
+
+      //then we set the time backwards
+
+      worker.time = 0
+      worker.sequence must be_==(1)
+      worker.nextId must throwA[InvalidSystemClock]
+      worker.sequence must be_==(1) // this used to get reset to 0, which would cause conflicts
+
+      worker.time = 1
+      val id3 = worker.nextId
+      (id3 >> 22) must be_==(1)
+      (id3 & sequenceMask ) must be_==(2)
+
     }
   }
 

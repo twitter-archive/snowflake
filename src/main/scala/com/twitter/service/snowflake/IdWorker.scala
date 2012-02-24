@@ -68,6 +68,13 @@ class IdWorker(workerId: Long, datacenterId: Long, private val reporter: Reporte
   protected[snowflake] def nextId(): Long = synchronized {
     var timestamp = timeGen()
 
+    if (timestamp < lastTimestamp) {
+      exceptionCounter.incr(1)
+      log.error("clock is moving backwards.  Rejecting requests until %d.", lastTimestamp);
+      throw new InvalidSystemClock("Clock moved backwards.  Refusing to generate id for %d
+        milliseconds".format(lastTimestamp - timestamp));
+    }
+
     if (lastTimestamp == timestamp) {
       sequence = (sequence + 1) & sequenceMask
       if (sequence == 0) {
@@ -76,13 +83,6 @@ class IdWorker(workerId: Long, datacenterId: Long, private val reporter: Reporte
     } else {
       sequence = 0
     }
-
-    if (timestamp < lastTimestamp) {
-      exceptionCounter.incr(1)
-      log.error("clock is moving backwards.  Rejecting requests until %d.", lastTimestamp);
-      throw new InvalidSystemClock("Clock moved backwards.  Refusing to generate id for %d milliseconds".format(lastTimestamp - timestamp));
-    }
-
 
     lastTimestamp = timestamp
     genCounter.incr()
