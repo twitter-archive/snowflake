@@ -71,8 +71,8 @@ class IdWorker(workerId: Long, datacenterId: Long, private val reporter: Reporte
     if (timestamp < lastTimestamp) {
       exceptionCounter.incr(1)
       log.error("clock is moving backwards.  Rejecting requests until %d.", lastTimestamp);
-      throw new InvalidSystemClock("Clock moved backwards.  Refusing to generate id for %d
-        milliseconds".format(lastTimestamp - timestamp));
+      throw new InvalidSystemClock("Clock moved backwards.  Refusing to generate id for %d milliseconds".format(
+        lastTimestamp - timestamp))
     }
 
     if (lastTimestamp == timestamp) {
