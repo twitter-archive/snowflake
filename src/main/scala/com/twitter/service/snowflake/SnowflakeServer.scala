@@ -1,4 +1,4 @@
-/** Copyright 2010-2011 Twitter, Inc. */
+/** Copyright 2010-2012 Twitter, Inc. */
 package com.twitter.service.snowflake
 
 import com.twitter.service.snowflake.client.SnowflakeClient
@@ -43,7 +43,7 @@ class SnowflakeServer(serverPort: Int, datacenterId: Int, workerId: Int, workerI
     skipSanityChecks: Boolean, startupSleepMs: Int, thriftServerThreads: Int,
     reporter: Reporter, zkClient: ZooKeeperClient) extends Service {
 
-  private val log = Logger.get
+  private[this] val log = Logger.get
   var server: TServer = null
 
   Stats.addGauge("datacenter_id") { datacenterId }

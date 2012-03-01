@@ -1,8 +1,9 @@
 package com.twitter.service.snowflake
 
-import org.specs._
 import com.twitter.logging.Logger
+import com.twitter.ostrich.stats.Stats
 import com.twitter.service.snowflake.gen.InvalidSystemClock
+import org.specs._
 
 class IdWorkerSpec extends Specification {
   val workerMask     = 0x000000000001F000L
@@ -192,7 +193,13 @@ class IdWorkerSpec extends Specification {
       val id3 = worker.nextId
       (id3 >> 22) must be_==(1)
       (id3 & sequenceMask ) must be_==(2)
+    }
 
+    "increment the right stats" in {
+      val worker = new IdWorker(0, 0, reporter)
+      worker.get_id("foo-bar")
+      Stats.getCounter("ids_generated")() must be_==(1)
+      Stats.getCounter("ids_generated_foo-bar")() must be_==(1)
     }
   }
 

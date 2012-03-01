@@ -1,4 +1,4 @@
-/** Copyright 2010-2011 Twitter, Inc.*/
+/** Copyright 2010-2012 Twitter, Inc.*/
 package com.twitter.service.snowflake
 
 import com.twitter.ostrich.stats.Stats
@@ -12,28 +12,30 @@ import com.twitter.logging.Logger
  * we ever want to support multiple worker threads
  * per process
  */
-class IdWorker(workerId: Long, datacenterId: Long, private val reporter: Reporter)
-    extends Snowflake.Iface {
-  private val genCounter = Stats.getCounter("ids_generated")
-  private val exceptionCounter = Stats.getCounter("exceptions")
-  private val log = Logger.get
-  private val rand = new Random
+class IdWorker(val workerId: Long, val datacenterId: Long, private val reporter: Reporter, var sequence: Long = 0L)
+extends Snowflake.Iface {
+  private[this] def genCounter(agent: String) = {
+    Stats.incr("ids_generated")
+    Stats.incr("ids_generated_%s".format(agent))
+  }
+  private[this] val exceptionCounter = Stats.getCounter("exceptions")
+  private[this] val log = Logger.get
+  private[this] val rand = new Random
 
   val twepoch = 1288834974657L
 
-  var sequence = 0L //TODO after 2.8 make this a constructor param with a default of 0
-  private val workerIdBits = 5L
-  private val datacenterIdBits = 5L
-  private val maxWorkerId = -1L ^ (-1L << workerIdBits)
-  private val maxDatacenterId = -1L ^ (-1L << datacenterIdBits)
-  private val sequenceBits = 12L
+  private[this] val workerIdBits = 5L
+  private[this] val datacenterIdBits = 5L
+  private[this] val maxWorkerId = -1L ^ (-1L << workerIdBits)
+  private[this] val maxDatacenterId = -1L ^ (-1L << datacenterIdBits)
+  private[this] val sequenceBits = 12L
 
-  private val workerIdShift = sequenceBits
-  private val datacenterIdShift = sequenceBits + workerIdBits
-  private val timestampLeftShift = sequenceBits + workerIdBits + datacenterIdBits
-  private val sequenceMask = -1L ^ (-1L << sequenceBits)
+  private[this] val workerIdShift = sequenceBits
+  private[this] val datacenterIdShift = sequenceBits + workerIdBits
+  private[this] val timestampLeftShift = sequenceBits + workerIdBits + datacenterIdBits
+  private[this] val sequenceMask = -1L ^ (-1L << sequenceBits)
 
-  private var lastTimestamp = -1L
+  private[this] var lastTimestamp = -1L
 
   // sanity check for workerId
   if (workerId > maxWorkerId || workerId < 0) {
@@ -56,6 +58,7 @@ class IdWorker(workerId: Long, datacenterId: Long, private val reporter: Reporte
     }
 
     val id = nextId()
+    genCounter(useragent)
 
     reporter.report(new AuditLogEntry(id, useragent, rand.nextLong))
     id
@@ -85,7 +88,6 @@ class IdWorker(workerId: Long, datacenterId: Long, private val reporter: Reporte
     }
 
     lastTimestamp = timestamp
-    genCounter.incr()
     ((timestamp - twepoch) << timestampLeftShift) |
       (datacenterId << datacenterIdShift) |
       (workerId << workerIdShift) | 

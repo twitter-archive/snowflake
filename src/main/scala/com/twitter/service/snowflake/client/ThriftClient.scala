@@ -1,4 +1,4 @@
-/** Copyright 2010-2011 Twitter, Inc. */
+/** Copyright 2010-2012 Twitter, Inc. */
 package com.twitter.service.snowflake.client
 
 import org.apache.thrift.TException
