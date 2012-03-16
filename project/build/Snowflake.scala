@@ -45,4 +45,9 @@ class SnowflakeProject(info: ProjectInfo) extends StandardServiceProject(info)
 
   override def packageAction = super.packageAction.dependsOn(packageClientAction)
   override def artifacts = Set(Artifact("snowflake", "thrift"))
+
+  override def testResources =
+    descendents(testResourcesPath ##, "*") +++
+    descendents(info.projectPath / "config" ##, "*")
+
 }
