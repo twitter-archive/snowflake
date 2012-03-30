@@ -27,6 +27,7 @@ class SnowflakeProject(info: ProjectInfo) extends StandardServiceProject(info)
       <exclude module="jmxtools"/>
       <exclude module="jmxri"/>
       <exclude org="apache-log4j"/>
+     <override org="junit" rev="4.8.1"/>
     </dependencies>
 
   override def pomExtra =

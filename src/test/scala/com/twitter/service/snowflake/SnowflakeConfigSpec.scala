@@ -6,7 +6,7 @@ import com.twitter.util.Eval
 import java.io.{File, FilenameFilter}
 import org.specs._
 
-class SnowflakeConfigSpec extends Specification {
+class SnowflakeConfigSpec extends SpecificationWithJUnit {
 
   "SnowflakeConfig" should {
     "properly extract the worker id" in {
