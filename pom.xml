@@ -5,11 +5,29 @@
   <artifactId>snowflake</artifactId>
   <packaging>jar</packaging>
   <version>1.0.1-SNAPSHOT</version>
+  <licenses>
+    <license>
+      <name>Apache License</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <repositories>
+    <repository>
+      <id>Twitter public Maven repo</id>
+      <url>http://maven.twttr.com</url>
+    </repository>
+  </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>Twitter public Maven repo</id>
+      <url>http://maven.twttr.com</url>
+    </pluginRepository>
+  </pluginRepositories>
   <parent>
     <groupId>com.twitter</groupId>
     <artifactId>service-292</artifactId>
     <version>0.0.2</version>
-    <relativePath>../../parents/service-292/pom.xml</relativePath>
   </parent>
   <properties>
     <git.dir>${project.basedir}/../.git</git.dir>

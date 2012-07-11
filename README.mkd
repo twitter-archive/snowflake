@@ -54,3 +54,9 @@ To contribute:
 1. fork the project
 2. make a branch for each thing you want to do (don't put everything in your master branch: we don't want to cherry-pick and we may not want everything)
 3. send a pull request to ryanking
+
+## building
+
+To build and test, run `mvn test`.
+
+[![Build Status](https://secure.travis-ci.org/twitter/snowflake.png)](http://travis-ci.org/twitter/snowflake).
