@@ -11,3 +11,5 @@ lib_managed
 project/boot
 .DS_Store
 src_managed
+sbt-launch.jar
+.classpath.txt
