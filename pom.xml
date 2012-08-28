@@ -27,7 +27,7 @@
   <parent>
     <groupId>com.twitter</groupId>
     <artifactId>service-292</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.4</version>
   </parent>
   <properties>
     <git.dir>${project.basedir}/../.git</git.dir>
