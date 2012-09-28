@@ -4,7 +4,7 @@
   <groupId>com.twitter.service</groupId>
   <artifactId>snowflake</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.1-SNAPSHOT</version>
+  <version>1.0.2-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache License</name>
