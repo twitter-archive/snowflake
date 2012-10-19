@@ -95,11 +95,8 @@ extends Snowflake.Iface {
   }
 
   protected def tilNextMillis(lastTimestamp: Long): Long = {
-    var timestamp = timeGen()
-    while (timestamp <= lastTimestamp) {
-      timestamp = timeGen()
-    }
-    timestamp
+     if(timeGen() <= lastTimestamp) tilNextMillis(lastTimestamp)
+     else timeGen()
   }
 
   protected def timeGen(): Long = System.currentTimeMillis()
