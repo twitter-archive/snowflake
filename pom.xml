@@ -81,7 +81,7 @@
       <plugin>
         <groupId>com.twitter</groupId>
         <artifactId>maven-finagle-thrift-plugin</artifactId>
-        <version>0.0.7</version>
+        <version>0.0.9</version>
         <configuration>
           <thriftGenerators>
             <thriftGenerator>java</thriftGenerator>
