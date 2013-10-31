@@ -39,7 +39,8 @@ object SnowflakeServer {
    }
 }
 
-class SnowflakeServer(serverPort: Int, datacenterId: Int, workerId: Int, workerIdZkPath: String,
+class SnowflakeServer(publishAddress: InetAddress, serverPort: Int,
+    datacenterId: Int, workerId: Int, workerIdZkPath: String,
     skipSanityChecks: Boolean, startupSleepMs: Int, thriftServerThreads: Int,
     reporter: Reporter, zkClient: ZooKeeperClient) extends Service {
 
@@ -92,7 +93,7 @@ class SnowflakeServer(serverPort: Int, datacenterId: Int, workerId: Int, workerI
     while (true) {
       try {
         zkClient.create("%s/%s".format(workerIdZkPath, i),
-          (getHostname + ':' + serverPort).getBytes(), EPHEMERAL)
+          (publishAddress.getHostName + ':' + serverPort).getBytes(), EPHEMERAL)
         return
       } catch {
         case e: NodeExistsException => {
@@ -134,7 +135,7 @@ class SnowflakeServer(serverPort: Int, datacenterId: Int, workerId: Int, workerI
   def sanityCheckPeers() {
     var peerCount = 0
     val timestamps = peers().filter{ case (id: Int, peer: Peer) =>
-      !(peer.hostname == getHostname && peer.port == serverPort)
+      !(peer.hostname == publishAddress.getHostName && peer.port == serverPort)
     }.map { case (id: Int, peer: Peer) =>
       try {
         log.info("connecting to %s:%s".format(peer.hostname, peer.port))
@@ -171,7 +172,4 @@ class SnowflakeServer(serverPort: Int, datacenterId: Int, workerId: Int, workerI
       }
     }
   }
-
-  def getHostname(): String = InetAddress.getLocalHost().getHostName()
-
 }

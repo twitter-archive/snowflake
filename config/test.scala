@@ -4,9 +4,10 @@ import java.net.InetAddress
 import com.twitter.ostrich.admin.config.AdminServiceConfig
 
 new SnowflakeConfig {
+  publishAddress = InetAddress.getLocalHost
   serverPort = 7609
   datacenterId = 0
-  workerIdMap = Map(0 -> InetAddress.getLocalHost.getHostName)
+  workerIdMap = Map(0 -> publishAddress.getHostName)
   workerIdZkPath = "/snowflake-servers"
   skipSanityChecks = false
   startupSleepMs = 10000

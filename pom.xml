@@ -27,7 +27,7 @@
   <parent>
     <groupId>com.twitter</groupId>
     <artifactId>service-292</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.12</version>
   </parent>
   <properties>
     <git.dir>${project.basedir}/../.git</git.dir>
@@ -75,13 +75,24 @@
       <artifactId>util-thrift</artifactId>
       <version>5.3.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.scala-tools.testing</groupId>
+      <artifactId>specs_2.9.3</artifactId>
+      <version>1.6.9</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency> 
+      <groupId>junit</groupId> 
+      <artifactId>junit</artifactId> 
+      <version>4.5</version> 
+    </dependency>
   </dependencies>
   <build>
     <plugins>
       <plugin>
         <groupId>com.twitter</groupId>
         <artifactId>maven-finagle-thrift-plugin</artifactId>
-        <version>0.0.7</version>
+        <version>0.0.9</version>
         <configuration>
           <thriftGenerators>
             <thriftGenerator>java</thriftGenerator>

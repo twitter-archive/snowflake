@@ -8,6 +8,7 @@ import com.twitter.zookeeper.ZookeeperClientConfig
 import com.twitter.util.Config.RequiredValuesMissing
 
 trait SnowflakeConfig extends ServerConfig[SnowflakeServer] {
+  var publishAddress = InetAddress.getLocalHost
   var serverPort = 7609
   var datacenterId = required[Int]
   var workerIdMap = required[Map[Int, String]]
@@ -29,8 +30,9 @@ trait SnowflakeConfig extends ServerConfig[SnowflakeServer] {
   }
 
   def apply(runtime: RuntimeEnvironment) = {
-    new SnowflakeServer(serverPort, datacenterId, workerIdFor(InetAddress.getLocalHost),
-        workerIdZkPath, skipSanityChecks, startupSleepMs, thriftServerThreads, reporterConfig(),
+    new SnowflakeServer(publishAddress, serverPort, datacenterId,
+        workerIdFor(publishAddress), workerIdZkPath, skipSanityChecks,
+        startupSleepMs, thriftServerThreads, reporterConfig(),
         zookeeperClientConfig())
   }
 
@@ -38,7 +40,7 @@ trait SnowflakeConfig extends ServerConfig[SnowflakeServer] {
     if (workerIdMap.values.size != workerIdMap.values.toSet.size)
       throw new RequiredValuesMissing("duplicate worker Ids")
     zookeeperClientConfig.validate
-    reporterConfig.validate 
+    reporterConfig.validate
     super.validate
   }
 }
