@@ -26,7 +26,7 @@ We can guarantee, however, that the id numbers will be k-sorted (references: htt
 
 ### Directly Sortable
 
-The ids should be sortable without loading the full objects that the represent. This sorting should be the above ordering.
+The ids should be sortable without loading the full objects that they represent. This sorting should be the above ordering.
 
 ### Compact
 
