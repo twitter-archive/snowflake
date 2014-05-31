@@ -4,7 +4,7 @@ the next version based on
 run anywhere without requiring Twitter's own infrastructure services.
 
 The initial version, released in 2010, was based on Apache Thrift and it
-predated [Finagle](https://twitter.github.io/twitter-server/), our building
+predated [Finagle](https://twitter.github.io/finagle/), our building
 block for RPC services at Twitter.  The Snowflake we're using internally is a
 full rewrite and heavily relies on existing infrastructure at Twitter to run.
 We cannot commit to a date but we're doing our best to add necessary features to
