@@ -13,9 +13,9 @@ APP_HOME="/usr/local/snowflake/current"
 MAIN_CLASS="com.twitter.service.snowflake.SnowflakeServer"
 DAEMON="/usr/local/bin/daemon"
 
-HEAP_OPTS="-Xmx700m -Xms700m"
+HEAP_OPTS="-Xmx700m -Xms700m -Xmn500m"
 JMX_OPTS="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false"
-GC_OPTS="-XX:+UseG1GC -verbosegc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:/var/log/snowflake/gc.log"
+GC_OPTS="-XX:+UseConcMarkSweepGC -verbosegc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -XX:+UseParNewGC -Xloggc:/var/log/snowflake/gc.log"
 DEBUG_OPTS="-XX:ErrorFile=/var/log/$APP_NAME/java_error%p.log"
 JAVA_OPTS="-server $GC_OPTS $JMX_OPTS $HEAP_OPTS $DEBUG_OPTS"
 JAVA_HOME=/usr/java/default
