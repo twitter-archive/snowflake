@@ -78,8 +78,7 @@ class SnowflakeServer(serverPort: Int, datacenterId: Int, workerId: Int, workerI
       tArgs.transportFactory(new TFramedTransport.Factory())
       tArgs.protocolFactory(new TBinaryProtocol.Factory())
       tArgs.processor(processor)
-
-      val server = new THsHaServer(tArgs)
+      server = new THsHaServer(tArgs)
 
       log.info("Starting server on port %s with workerThreads=%s", serverPort, thriftServerThreads)
       server.serve()
